@@ -1,9 +1,16 @@
 import java.util.Date
-import org.parboiled.trees.BinaryTreeNode
 
 /**
  * @author max@tactix4.com
  *         7/9/13
+ *
+ *         can be used to easily specify Domains for queries e.g.
+ *
+ *         ("name" === "ABC") AND ("lang" =/= "EN") AND (NOT("department" child_of "HR") OR ("country" like "Germany"))
+ *
+ *         parenthesis should be used to make precedence unambiguous
+ *
+ *         includes implicit def to Array form for easy passing to TransportAdaptor
  */
 object OpenERPDomain {
 
@@ -53,6 +60,7 @@ object OpenERPDomain {
   case class StringFieldType(s: String) extends FieldType[String](s)
   case class DateFieldType(d: Date) extends FieldType[Date](d)
 
+  //TODO:Include the other Field Types many-to-many e.t.c.
   object FieldType {
     implicit def BoolToFieldType(value: Boolean): FieldType[Boolean] = new BooleanFieldType(value)
     implicit def IntToFieldType(value: Int): FieldType[Int]          = new IntFieldType(value)
