@@ -1,0 +1,5 @@
+project/
+target/
+openerpxmlrpc.iml
+.idea
+.idea_modules
