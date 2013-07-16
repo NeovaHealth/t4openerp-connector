@@ -1,3 +1,5 @@
+package com.tactix4.openerpConnector
+
 /**
  * @author max@tactix4.com
  *         5/24/13
