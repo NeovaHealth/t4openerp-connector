@@ -12,5 +12,7 @@ package object transport {
   implicit def StringToTransportString(s: String) = new TransportString(s)
   implicit def IntToTransportNumber(i: Int) = new TransportNumber(i)
   implicit def ListOfIntsToTransportArray(l: List[Int]) : TransportArray = TransportArray(l.map(TransportNumber(_)))
+  implicit def ListOfStringsToTransportArray(l: List[String]) : TransportArray = TransportArray(l.map(TransportString(_)))
+  implicit def ListMaptoTransportMap(l: List[(String, String)]) : TransportMap = TransportMap(l.map(x => (TransportString(x._1), TransportString(x._2))))
   type TransportResponse = Either[TransportString,List[TransportDataType]]
 }

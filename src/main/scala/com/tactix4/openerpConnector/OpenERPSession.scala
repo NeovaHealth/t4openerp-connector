@@ -35,13 +35,13 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     }
   } )
 
-  def search(model:String, domain: Option[Domain] = None, offset: Option[Int] = None, limit: Option[Int] = None, order: Option[String] = None) : Future[List[Int]]= {
+  def search(model:String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = "") : Future[List[Int]]= {
 
     config.path = RPCService.RPC_OBJECT
 
     val promise = Promise[List[Int]]()
     val result = for{
-      obsIds <-  transportAdaptor.sendRequest(config,"execute", database, uid, password, model, "search", domain.map(_.toTransportDataType).getOrElse(""), offset.map(TransportNumber(_)).getOrElse(0),limit.map(TransportNumber(_)).getOrElse(0),order.map(TransportString(_)).getOrElse(""),context.toTransportDataType)
+      obsIds <-  transportAdaptor.sendRequest(config,"execute", database, uid, password, model, "search", domain.map(_.toTransportDataType).getOrElse(""), offset, limit,order,context.toTransportDataType)
     } yield obsIds
 
     result.onComplete((value: Try[TransportResponse]) => value match {
@@ -63,13 +63,12 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
   }
 
 
-  def read(model:String, ids: TransportArray, fields: Option[TransportArray] = None) : Future[List[List[(String, Any)]]] = {
+  def read(model:String, ids: List[Int], fields: List[String] = Nil) : Future[List[List[(String, Any)]]] = {
 
     config.path = RPCService.RPC_OBJECT
-
     val promise = Promise[List[List[(String, Any)]]]()
     val result = for{
-      values <-  transportAdaptor.sendRequest(config, "execute",database,uid,password,model,"read", ids, fields.getOrElse(""),context.toTransportDataType)
+      values <-  transportAdaptor.sendRequest(config, "execute",database,uid,password,model,"read", ids, fields,context.toTransportDataType)
     } yield values
 
     result.onComplete((value: Try[TransportResponse]) => value match{
@@ -98,7 +97,8 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
 	 * @return A list of list of tuples representing the result of the search
  */
 
-  def searchAndRead(model:String, domain: Option[Domain] = None, offset: Option[Int] = None, limit: Option[Int] = None, order: Option[String] = None) : Future[List[List[(String, Any)]]] = {
+
+  def searchAndRead(model:String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = "") : Future[List[List[(String, Any)]]] = {
 
     config.path = RPCService.RPC_OBJECT
 
@@ -141,7 +141,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
   }
 
 
-  def update(model:String, ids: TransportArray, fields: TransportMap) : Future[Boolean] = {
+  def update(model:String, ids: List[Int], fields: TransportMap) : Future[Boolean] = {
 
     config.path = RPCService.RPC_OBJECT
 
@@ -162,7 +162,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     promise.future
   }
 
-  def delete(model:String, ids:TransportArray) = {
+  def delete(model:String, ids:List[Int]) = {
 
     config.path = RPCService.RPC_OBJECT
 

@@ -7,7 +7,7 @@ import scala.util.{Try, Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import com.tactix4.openerpConnector.domain.Domain._
-import com.tactix4.openerpConnector.domain.FieldType._
+import com.tactix4.openerpConnector.field.FieldType._
 
 import com.tactix4.openerpConnector.transport._
 
@@ -140,7 +140,7 @@ class OpenERPProxyTest extends FunSuite with Futures {
 
     val result = for {
       s <- session
-      r <- s.create("res.partner",TransportMap(List(("name", "McLovin"))))
+      r <- s.create("res.partner",List("name" -> "McLovin"))
     } yield r
 
     result.onComplete((value: Try[Int]) => value match {
@@ -155,7 +155,7 @@ class OpenERPProxyTest extends FunSuite with Futures {
     val result = for {
       s <- session
       ids <- s.search("res.partner", "name" === "McLovin")
-      r <- s.update("res.partner",ids, TransportMap(List(("name", "McLovinUpdated"))))
+      r <- s.update("res.partner",ids, List("name" -> "McLovinUpdated"))
     } yield { println(ids); r}
 
     //OpenERP returns TRUE whether we updated anything or not - useful!

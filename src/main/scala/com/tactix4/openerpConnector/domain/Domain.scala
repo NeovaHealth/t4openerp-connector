@@ -1,11 +1,10 @@
 package com.tactix4.openerpConnector.domain
 
 
-import java.util.Date
 import com.tactix4.openerpConnector.transport._
-import com.tactix4.openerpConnector.transport.TransportBoolean
-import com.tactix4.openerpConnector.transport.TransportNumber
+import com.tactix4.openerpConnector.field._
 import com.tactix4.openerpConnector.transport.TransportArray
+import scala.Some
 
 /**
  * @author max@tactix4.com
@@ -119,42 +118,19 @@ sealed class DomainOperator(s: String) {
   def parent_right(n: Field) = DomainTuple(s, "parent_right", n)
 }
 
-sealed trait Field
-
-sealed abstract class FieldType[T](val value: T) extends Field
-
-case class BooleanFieldType(b: Boolean) extends FieldType[Boolean](b)
-
-case class IntFieldType(i: Int) extends FieldType[Int](i)
-
-case class FloatFieldType(f: Float) extends FieldType[Float](f)
-
-case class StringFieldType(s: String) extends FieldType[String](s)
-
-case class DateFieldType(d: Date) extends FieldType[Date](d)
-
-//TODO:Include the other Field Types many-to-many e.t.c.
-object FieldType {
-  implicit def BoolToFieldType(value: Boolean): FieldType[Boolean] = new BooleanFieldType(value)
-
-  implicit def IntToFieldType(value: Int): FieldType[Int] = new IntFieldType(value)
-
-  implicit def FloatToFieldType(value: Float): FieldType[Float] = new FloatFieldType(value)
-
-  implicit def StringToFieldType(value: String): FieldType[String] = new StringFieldType(value)
-
-  implicit def DateToFieldType(value: Date): FieldType[Date] = new DateFieldType(value)
-
-  implicit def FieldToTransportType(f: Field): TransportDataType = f match {
-    case x: BooleanFieldType => TransportBoolean(x.value)
-    case x: IntFieldType => TransportNumber(x.value)
-    case x: FloatFieldType => TransportNumber(x.value)
-    case x: StringFieldType => TransportString(x.value)
-    case x: DateFieldType => TransportString(x.value.toString)
 
 
-  }
 
 
-}
+
+
+
+
+
+
+
+
+
+
+
 
