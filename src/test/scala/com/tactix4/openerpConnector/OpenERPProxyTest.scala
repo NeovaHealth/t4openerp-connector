@@ -1,5 +1,5 @@
 package com.tactix4.openerpConnector
-
+import com.typesafe.config._
 import org.scalatest.concurrent._
 import org.scalatest.FunSuite
 import scala.concurrent.Await
@@ -16,13 +16,15 @@ import com.tactix4.openerpConnector.transport._
  * 5/20/13
  */
 class OpenERPProxyTest extends FunSuite with Futures {
+  val conf = ConfigFactory.load()
+  val username = conf.getString("openERPServer.username")
+  val password = conf.getString("openERPServer.password")
+  val database = conf.getString("openERPServer.database")
+  val openerpHost = conf.getString("openERPServer.hostname")
+  val openerpPort = conf.getInt("openERPServer.port")
 
-  val username = "admin"
-  val password = "admin"
-  val database = "ww_test3"
-  val openerpHost = "192.168.2.102"
+  val proxy = new OpenERPProxy("http", openerpHost,openerpPort)
 
-  val proxy = new OpenERPProxy("http", openerpHost, 8069)
   val session = proxy.startSession(username,password,database)
 
   test("login to openerp host") {
@@ -71,7 +73,7 @@ class OpenERPProxyTest extends FunSuite with Futures {
 
   }
 
-  test("Read from res.parner table") {
+  test("Read from res.partner table") {
     val ids = for {
       s <- session
       i <- s.read("res.partner", List(1))
@@ -136,7 +138,7 @@ class OpenERPProxyTest extends FunSuite with Futures {
   }
 
 
-  test("Create new parner in res.partner") {
+  test("Create new partner in res.partner") {
 
     val result = for {
       s <- session

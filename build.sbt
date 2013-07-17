@@ -23,3 +23,5 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test"
 libraryDependencies += "org.scalamock" %% "scalamock-scalatest-support" % "3.0.1" % "test"
 
 libraryDependencies += "com.typesafe" %% "scalalogging-log4j" % "1.0.1"
+
+libraryDependencies += "com.typesafe" % "config" % "1.0.2"

@@ -135,6 +135,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
             promise.failure(new OpenERPException("Error reading result: " + result))
         )
       )
+      case Failure(f) => promise.failure(f)
     })
 
     promise.future
@@ -157,6 +158,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
             case fail => promise.failure(new OpenERPException("Error reading result: " + result))
           }).getOrElse(promise.failure(new OpenERPException("Error reading result: " + result)))
       )
+      case Failure(f) => promise.failure(f)
     })
 
     promise.future
