@@ -12,7 +12,9 @@ resolvers ++= Seq(
 resolvers += "Local SBT Repository" at Path.userHome.asFile.toURI.toURL+".ivy2/local"
 
 
-libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.0"
+libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.2"
+
+libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.0.2"
 
 libraryDependencies += "simplexmlrpc" %% "simplexmlrpc" % "1.0-SNAPSHOT"
 
@@ -25,3 +27,5 @@ libraryDependencies += "org.scalamock" %% "scalamock-scalatest-support" % "3.0.1
 libraryDependencies += "com.typesafe" %% "scalalogging-log4j" % "1.0.1"
 
 libraryDependencies += "com.typesafe" % "config" % "1.0.2"
+
+libraryDependencies += "com.chuusai" %% "shapeless" % "1.2.4"

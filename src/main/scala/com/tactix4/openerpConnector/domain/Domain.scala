@@ -37,14 +37,12 @@ sealed trait Domain {
 
 object Domain {
 
-  import FieldType._
-
   type OpenERPDomain = Domain
 
   implicit def DomainToOptionDomain(d: Domain) : Option[Domain] = Some(d)
   implicit def StringToDomainOperator(s: String): DomainOperator = new DomainOperator(s)
 
-  implicit def DomainTupleToTransportArray(d: DomainTuple): TransportArray = TransportArray(List(d.value._1, d.value._2, d.value._3))
+//  implicit def DomainTupleToTransportArray(d: DomainTuple): TransportArray = TransportArray(List(d.value._1, d.value._2, d.value._3))
 
   implicit def DomainToArray(t: Domain): Array[Any] = {
     //TODO: make tail recursive (trampolines?)
@@ -59,7 +57,9 @@ object Domain {
     loop(t).toArray
   }
 
-  implicit object TreeToTransportData extends TransportDataFormat[Domain]{
+  implicit def DomainTupleToDomain(dt: DomainTuple): Domain = dt
+
+  implicit object DomainToTransportData extends TransportDataFormat[Domain]{
 
     def write(obj: Domain): TransportDataType = {
       def loop(tree: Domain): List[TransportDataType] = {
@@ -88,34 +88,34 @@ case class NOT(value: DomainTuple) extends Domain {
   override def toString = "'!'," + value
 }
 
-case class DomainTuple(value: (String, String, Field)) extends Domain {
+case class DomainTuple(value: (String, String, TransportDataType)) extends Domain {
   override def toString = "('" + value._1 + "','" + value._2 + "','" + value._3 + "')"
 
   def NOT = new NOT(this)
 }
 
 sealed class DomainOperator(s: String) {
-  def ===(n: Field) = DomainTuple(s, "=", n)
+  def ===(n: TransportDataType) = DomainTuple(s, "=", n)
 
-  def =/=(n: Field) = DomainTuple(s, "!=", n)
+  def =/=(n: TransportDataType) = DomainTuple(s, "!=", n)
 
-  def lt(n: Field) = DomainTuple(s, "<", n)
+  def lt(n: TransportDataType) = DomainTuple(s, "<", n)
 
-  def gt(n: Field) = DomainTuple(s, ">", n)
+  def gt(n: TransportDataType) = DomainTuple(s, ">", n)
 
-  def like(n: Field) = DomainTuple(s, "like", n)
+  def like(n: TransportDataType) = DomainTuple(s, "like", n)
 
-  def ilike(n: Field) = DomainTuple(s, "ilike", n)
+  def ilike(n: TransportDataType) = DomainTuple(s, "ilike", n)
 
-  def in(n: Field) = DomainTuple(s, "in", n)
+  def in(n: TransportDataType) = DomainTuple(s, "in", n)
 
-  def not_in(n: Field) = DomainTuple(s, "not in", n)
+  def not_in(n: TransportDataType) = DomainTuple(s, "not in", n)
 
-  def child_of(n: Field) = DomainTuple(s, "child_of", n)
+  def child_of(n: TransportDataType) = DomainTuple(s, "child_of", n)
 
-  def parent_left(n: Field) = DomainTuple(s, "parent_left", n)
+  def parent_left(n: TransportDataType) = DomainTuple(s, "parent_left", n)
 
-  def parent_right(n: Field) = DomainTuple(s, "parent_right", n)
+  def parent_right(n: TransportDataType) = DomainTuple(s, "parent_right", n)
 }
 
 

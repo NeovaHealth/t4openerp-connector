@@ -3,6 +3,8 @@ package com.tactix4.openerpConnector.transport
 import scala.annotation.implicitNotFound
 
 import scala.concurrent.Future
+import scalaz._
+import Scalaz._
 
 
 /**
@@ -24,9 +26,10 @@ class PimpedAny[T](any: T) {
   def toTransportDataType(implicit writer: TransportDataWriter[T]): TransportDataType = writer.write(any)
 }
 
-sealed abstract class TransportDataType {
+sealed abstract class TransportDataType{
   def convertTo[T: TransportDataReader]: T = transportDataReader[T].read(this)
   def toScalaType:Any
+
 }
 
 case class TransportNumber[T](value: T)(implicit num: Numeric[T]) extends TransportDataType{
@@ -36,6 +39,7 @@ case class TransportNumber[T](value: T)(implicit num: Numeric[T]) extends Transp
 
 case class TransportBoolean(value: Boolean) extends TransportDataType{
   def toScalaType:Boolean = value
+
 }
 
 case class TransportString(value: String) extends TransportDataType{
@@ -47,6 +51,9 @@ case class TransportArray(value: List[TransportDataType]) extends TransportDataT
 }
 
 case class TransportMap(value: List[(TransportString, TransportDataType)]) extends TransportDataType {
+  def getKeys : List[String] = {
+    value.map(_._1.value)
+  }
   def toScalaType:List[(String,Any)] = value.map((t: (TransportString, TransportDataType)) => (t._1.value, t._2.toScalaType))
 }
 

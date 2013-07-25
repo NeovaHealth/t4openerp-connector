@@ -6,7 +6,9 @@ import com.typesafe.scalalogging.log4j.Logging
 import scala.concurrent.{ExecutionContext, Promise, Future}
 import scala.util.{Failure, Success, Try}
 import ExecutionContext.Implicits.global
- /**
+import com.tactix4.openerpConnector.OpenERPSession
+
+/**
  * @author max@tactix4.com
  *         7/12/13
  */
@@ -39,7 +41,9 @@ object XmlRpcTransportAdaptor extends OpenERPTransportAdaptor with Logging{
      }
    }
 
-   def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: List[TransportDataType]): Future[TransportResponse] = {
+
+
+   override def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: List[TransportDataType]): Future[TransportResponse] = {
     logger.info("sending request with\nconfig: " + config + "\nmethodName: " + methodName + "\nparams: " + params)
 
     val xmlRpcConfig = XmlRpcConfig(RPCProtocol.stringToRpcProtocol(config.protocol), config.host, config.port, config.path, config.headers)
@@ -49,7 +53,7 @@ object XmlRpcTransportAdaptor extends OpenERPTransportAdaptor with Logging{
     answer.onComplete(
       result => result match{
         case Success(r) => r match {
-          case s: XmlRpcResponseNormal =>  promise.complete(Try(Right(s.params.map(x => x.toTransportDataType))))
+          case s: XmlRpcResponseNormal =>  promise.complete(Try(Right(s.params.headOption.map(x => x.toTransportDataType).getOrElse(TransportArray(Nil)))))
           case s: XmlRpcResponseFault  =>  promise.complete(Try(Left(s.toString)))
         }
         case Failure(e) => promise.failure(e)
