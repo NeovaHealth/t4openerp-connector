@@ -1,6 +1,5 @@
 package com.tactix4.openerpConnector.domain
 
-
 import com.tactix4.openerpConnector.transport._
 import com.tactix4.openerpConnector.field._
 import com.tactix4.openerpConnector.transport.TransportArray

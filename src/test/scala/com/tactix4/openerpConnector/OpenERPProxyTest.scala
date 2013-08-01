@@ -8,10 +8,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import com.tactix4.openerpConnector.domain.Domain._
 import com.tactix4.openerpConnector.field.FieldType._
-
+import OpenERPSession._
 import com.tactix4.openerpConnector.transport._
 import com.tactix4.openerpConnector.field.{FieldType, Field}
-
 /**
  * Created by max@tactix4.com
  * 5/20/13
@@ -43,7 +42,7 @@ class OpenERPProxyTest extends FunSuite with Futures {
   test("Read from res.partner table") {
     val ids = for {
       s <- session
-      i <-  s.read("res.partner",List(1))
+      i <-  s.read("res.partner",1)
     } yield i
 
     ids.onComplete((value: Try[List[List[(String, Any)]]]) => value match {
@@ -59,7 +58,7 @@ class OpenERPProxyTest extends FunSuite with Futures {
   test("Fail to Read from nonexistant table") {
     val ids = for {
       s <- session
-      i <- s.read("res.partnerzoid", List(1))
+      i <- s.read("res.partnerzoid", 1)
     } yield i
 
     ids.onComplete((value: Try[List[List[(String, Any)]]]) => value match {
@@ -82,18 +81,18 @@ class OpenERPProxyTest extends FunSuite with Futures {
     } yield obs
 
     allObs.onComplete((value: Try[List[List[(String, Any)]]]) => value match {
-      case Success(s) => s.foreach(_ foreach println)
+      case Success(s) => println("success")
       case Failure(f) => fail(f)
     }  )
     //this one take a while...
-    Await.result(allObs, 5 seconds)
+    Await.result(allObs, 10 seconds)
   }
 
-  test("Search and read the res.partner table with a domain") {
+  test("Search and read the res.partner table with a domain and fields") {
 
     val allObs = for {
       s <- session
-      obs <- s.searchAndRead("res.partner", ("email" ilike "info@") AND (("is_company" =/= true) OR ("zip" === "60623")), List("email"))
+      obs <- s.searchAndRead("res.partner", ("email" ilike "info@") AND (("is_company" =/= true) OR ("zip" === "60623")), "category_id")
     } yield obs
 
     allObs.onComplete((value: Try[List[List[(String, Any)]]]) => value match {
@@ -136,85 +135,38 @@ class OpenERPProxyTest extends FunSuite with Futures {
     }
   }
 
-  //  test("Update partner in res.partner") {
-//
-//    val result = for {
-//      s <- session
-//      ids <- s.search("res.partner", "name" === "McLovin")
-//      r <- s.write("res.partner",ids, List(("name"-> "McLovinUpdated")))
-//    } yield { println(ids); r}
-//
-//    //OpenERP returns TRUE whether we updated anything or not - useful!
-//    result.onComplete((value: Try[Boolean]) => value match {
-//      case Success(s) => println("partner updated. Or Not. Who can tell?")
-//      case Failure(f) => fail(f)
-//    })
-//
-//    Await.result(result, 2 seconds)
-//  }
-//
-//  test("Delete partner in res.partner") {
-//
-//    val result = for {
-//      s <- session
-//      ids <- s.search("res.partner", "name" === "McLovingUpdated")
-//      d <- s.delete("res.partner", ids)
-//    } yield d
-//
-//    //OpenERP returns TRUE whether we deleted anything or not - useful!
-//    result.onComplete(_ match {
-//      case Success(s) => println("partner was deleted. Or not. I'm not sure.")
-//      case Failure(f) => fail(f)
-//    })
-//    Await.result(result, 2 seconds)
-//  }
-//
-//
-//  test("call fields_get") {
-//    val result = for {
-//      s <- session
-//      r <- s.getFields("res.partner")
-//    } yield r
-//
-//    val promise = Promise[String]()
-//    result.onComplete(
-//      _ match{
-//      case Success(s) => {println(s.value.map(t => (t._1.value, t._2.toScalaType))); promise.complete(Try("complete"))}
-//      case Failure(f) => { fail(f); promise.failure(f)}
-//    }
-//  )
-//
-//    Await.result(promise.future, 5 seconds)
-//
-//  }
-//
-//  test("call field_get"){
-//
-////    val result = for {
-////      s <- session
-////      r <- s.getField("res.partner", "type")
-////    }
-//
-//  }
-//
-  test("fetch a many2one field to see what happens") {
+  test("Update partner in res.partner") {
+
     val result = for {
       s <- session
-      r <- s.searchAndRead("res.partner", "id" === "3")
-      m <- s.getModelAdaptor("res.partner")
-      f <- m.getField("name")
-    } yield { println(f.get);r}
+      ids <- s.search("res.partner", "name" === "McLovin")
+      r <- s.write("res.partner",ids, List("name" -> "McLovinUpdated"))
+    } yield { r}
 
-    result.onComplete(_ match{
-      case Success(s) => println("pass")
+    //OpenERP returns TRUE whether we updated anything or not - useful!
+    result.onComplete((value: Try[Boolean]) => value match {
+      case Success(s) => println("partner updated. Or Not. Who can tell?")
       case Failure(f) => fail(f)
     })
 
-    Await.result(result, 10 seconds)
-
+    Await.result(result, 3 seconds)
   }
 
+  test("Delete partner in res.partner") {
 
+    val result = for {
+      s <- session
+      ids <- s.search("res.partner", "name" === "McLovingUpdated")
+      d <- s.unlink("res.partner", ids)
+    } yield d
+
+    //OpenERP returns TRUE whether we deleted anything or not - useful!
+    result.onComplete(_ match {
+      case Success(s) => println("partner was deleted. Or not. I'm not sure.")
+      case Failure(f) => fail(f)
+    })
+    Await.result(result, 2 seconds)
+  }
 
   test("fail login to openerp host - bad password") {
     val session = proxy.startSession(username, password + "FAIL", database)
@@ -250,4 +202,6 @@ class OpenERPProxyTest extends FunSuite with Futures {
       Await.result(session, 1 second)
     }
 
-  }}
+  }
+
+}

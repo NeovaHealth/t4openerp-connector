@@ -3,7 +3,8 @@ import scala.reflect.runtime.universe._
 import java.util.Date
 import com.tactix4.openerpConnector.transport.{TransportArray, TransportDataType, TransportString, TransportMap}
 import com.tactix4.openerpConnector.OpenERPException
-
+import scalaz._
+import Scalaz._
 /**
  * @author max@tactix4.com
  *         17/07/2013
@@ -19,7 +20,7 @@ import com.tactix4.openerpConnector.OpenERPException
 trait FieldType{
   val name: String
   val parameters: TransportMap
-  val fieldType = parameters.value.find(_._1.value == "type").map(_._2.toScalaType).getOrElse(throw new OpenERPException("Could not find type information"))
+  val fieldType:String = parameters.value.find(_._1.value == "type").map(_._2.toScalaType.toString).getOrElse(throw new OpenERPException("Could not find type information"))
 }
 
 case class Field(name: String, parameters: TransportMap) extends FieldType{
@@ -31,7 +32,7 @@ case class SelectionField(name: String, parameters: TransportMap) extends FieldT
       case _                      =>  throw new OpenERPException("Could not parse selection field: " + x)
     }).getOrElse(throw new OpenERPException("Could not parse selection field: " + x))
     case fail                => throw new OpenERPException("Could not parse selection field: " + fail)
-  })
+  }).sequence.toList
 }
 
 //TODO:Include the other FieldType Types many-to-many e.t.c.

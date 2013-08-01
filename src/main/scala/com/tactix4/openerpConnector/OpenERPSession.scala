@@ -1,6 +1,5 @@
 package com.tactix4.openerpConnector
 
-
 import com.typesafe.scalalogging.log4j.Logging
 import scala.concurrent.{ExecutionContext, Promise, Future}
 import com.tactix4.openerpConnector.transport._
@@ -33,13 +32,11 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     modelAdaptors(model).flatMap(_.searchAndRead(domain, fields, offset, limit, order))
   }
 
-  //TODO: Needs to check the type of field:
   def create(model: String, fields: List[(String, String)]) : Future[Int] = {
     modelAdaptors(model).flatMap(_.create(fields))
   }
 
-  //TODO: Needs to check the type of field:
-  def write(model: String, ids: List[Int], fields: List[FieldType]) : Future[Boolean] = {
+  def write(model: String, ids: List[Int], fields: List[(String, TransportDataType)]) : Future[Boolean] = {
     modelAdaptors(model).flatMap(_.write(ids,fields))
   }
 
@@ -96,4 +93,10 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
   } )
 
 
+}
+
+object OpenERPSession{
+  implicit def IntToListOfInts(i: Int) : List[Int] = List(i)
+  implicit def StringToListOfStrings(s: String) : List[String] = List(s)
+  implicit def TupleToListOfTuples (t : (String, TransportDataType)) : List[(String, TransportDataType)] = List(t)
 }
