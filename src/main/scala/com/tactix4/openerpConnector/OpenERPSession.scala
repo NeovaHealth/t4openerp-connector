@@ -1,6 +1,6 @@
 package com.tactix4.openerpConnector
 
-import com.typesafe.scalalogging.log4j.Logging
+import com.typesafe.scalalogging.slf4j.Logging
 import scala.concurrent.{ExecutionContext, Promise, Future}
 import com.tactix4.openerpConnector.transport._
 import scala.util.{Try, Success, Failure}
@@ -32,7 +32,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     modelAdaptors(model).flatMap(_.searchAndRead(domain, fields, offset, limit, order))
   }
 
-  def create(model: String, fields: List[(String, String)]) : Future[Int] = {
+  def create(model: String, fields: List[(String, TransportDataType)]) : Future[Int] = {
     modelAdaptors(model).flatMap(_.create(fields))
   }
 

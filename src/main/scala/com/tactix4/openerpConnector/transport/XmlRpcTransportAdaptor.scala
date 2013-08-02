@@ -2,7 +2,7 @@ package com.tactix4.openerpConnector.transport
 
 import com.tactix4.simpleXmlRpc._
 import com.tactix4.simpleXmlRpc.XmlRpcInt
-import com.typesafe.scalalogging.log4j.Logging
+import com.typesafe.scalalogging.slf4j.Logging
 import scala.concurrent.{ExecutionContext, Promise, Future}
 import scala.util.{Failure, Success, Try}
 import ExecutionContext.Implicits.global
@@ -32,7 +32,10 @@ object XmlRpcTransportAdaptor extends OpenERPTransportAdaptor with Logging{
 
      def read(obj: TransportDataType): XmlRpcDataType = obj match {
        case TransportNumber(x:Int) => XmlRpcInt(x)
-       case TransportNumber(x) => XmlRpcDouble(x.asInstanceOf[Double])
+       case TransportNumber(x:BigDecimal) => XmlRpcDouble(x.toDouble)
+       case TransportNumber(x:BigInt) => XmlRpcDouble(x.toDouble)
+       case TransportNumber(x:Float) => XmlRpcDouble(x.toDouble)
+       case TransportNumber(x:Double) => XmlRpcDouble(x)
        case TransportString(x) => XmlRpcString(x)
        case TransportBoolean(x) => XmlRpcBoolean(x)
        case TransportArray(x) => XmlRpcArray(x.map(read))

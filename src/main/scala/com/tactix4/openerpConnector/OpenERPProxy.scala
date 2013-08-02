@@ -1,11 +1,10 @@
 package com.tactix4.openerpConnector
 
 import com.tactix4.openerpConnector.transport._
-import com.typesafe.scalalogging.log4j.Logging
+import com.typesafe.scalalogging.slf4j.Logging
 import scala.concurrent.{Promise, Future}
 import scala.util.{Try, Success, Failure}
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.tactix4.openerpConnector.OpenERPModelAdaptor
 /**
  * @author max@tactix4.com
  *         14/07/2013

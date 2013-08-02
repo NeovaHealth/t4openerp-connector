@@ -1,5 +1,5 @@
 package com.tactix4.openerpConnector
-import com.typesafe.scalalogging.log4j.Logging
+import com.typesafe.scalalogging.slf4j.Logging
 import scala.concurrent.{ExecutionContext, Promise, Future}
 import com.tactix4.openerpConnector.transport._
 import scala.util.{Try, Success, Failure}
@@ -140,12 +140,12 @@ class OpenERPModelAdaptor(model: String, session: OpenERPSession) extends Loggin
   }
 
 
-  def create(fields: List[(String,String)]) : Future[Int] = {
+  def create(fields: List[(String,TransportDataType)]) : Future[Int] = {
 
     session.config.path = RPCService.RPC_OBJECT
 
     val promise = Promise[Int]()
-    val result = session.transportAdaptor.sendRequest(session.config, "execute", session.database, session.uid, session.password, model, "create",TransportMap(fields.map(a=>TransportString(a._1) -> TransportString(a._2))), session.context.toTransportDataType)
+    val result = session.transportAdaptor.sendRequest(session.config, "execute", session.database, session.uid, session.password, model, "create",TransportMap(fields.map(a=>TransportString(a._1) -> a._2)), session.context.toTransportDataType)
 
     result.onComplete((value: Try[TransportResponse]) => value match{
       case Success(s) => s.fold(
