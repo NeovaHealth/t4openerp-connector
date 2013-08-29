@@ -1,21 +1,37 @@
+/*
+ * Copyright (C) 2013 Tactix4
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.tactix4.openerpConnector
 import com.typesafe.config._
 import org.scalatest.concurrent._
 import org.scalatest.FunSuite
-import scala.concurrent.{Promise, Await}
+import scala.concurrent.Await
 import scala.util.{Try, Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import com.tactix4.openerpConnector.domain.Domain._
-import com.tactix4.openerpConnector.field.FieldType._
 import OpenERPSession._
-import com.tactix4.openerpConnector.transport._
-import com.tactix4.openerpConnector.field.{FieldType, Field}
+import com.tactix4.openerpConnector.exception.{OpenERPAuthenticationException, OpenERPException}
+
 /**
  * Created by max@tactix4.com
  * 5/20/13
  */
-class OpenERPProxyTest extends FunSuite with Futures {
+class OpenERPConnectorTest extends FunSuite with Futures {
 
   val conf = ConfigFactory.load()
 
@@ -25,7 +41,7 @@ class OpenERPProxyTest extends FunSuite with Futures {
   val openerpHost = conf.getString("openERPServer.hostname")
   val openerpPort = conf.getInt("openERPServer.port")
 
-  val proxy = new OpenERPProxy("http", openerpHost,openerpPort)
+  val proxy = new OpenERPConnector("http", openerpHost,openerpPort)
 
   val session = proxy.startSession(username,password,database)
 
@@ -38,14 +54,13 @@ class OpenERPProxyTest extends FunSuite with Futures {
 
   }
 
-
   test("Read from res.partner table") {
     val ids = for {
       s <- session
       i <-  s.read("res.partner",1)
     } yield i
 
-    ids.onComplete((value: Try[List[List[(String, Any)]]]) => value match {
+    ids.onComplete((value: Try[ResultType]) => value match {
       case Success(s) => s.foreach(_ foreach println)
       case Failure(f) => fail(f)
     })
@@ -61,7 +76,7 @@ class OpenERPProxyTest extends FunSuite with Futures {
       i <- s.read("res.partnerzoid", 1)
     } yield i
 
-    ids.onComplete((value: Try[List[List[(String, Any)]]]) => value match {
+    ids.onComplete((value: Try[ResultType]) => value match {
       case Success(s) => s.foreach(_ foreach println)
       case Failure(f) => fail(f)
     })
@@ -77,26 +92,26 @@ class OpenERPProxyTest extends FunSuite with Futures {
 
     val allObs = for {
       s <- session
-      obs <- s.searchAndRead("res.partner")
+      obs <- s.searchAndRead("res.partner", limit = 10)
     } yield obs
 
-    allObs.onComplete((value: Try[List[List[(String, Any)]]]) => value match {
+    allObs.onComplete((value: Try[ResultType]) => value match {
       case Success(s) => println("success")
       case Failure(f) => fail(f)
     }  )
     //this one take a while...
-    Await.result(allObs, 10 seconds)
+    Await.result(allObs, 30 seconds)
   }
 
   test("Search and read the res.partner table with a domain and fields") {
 
     val allObs = for {
       s <- session
-      obs <- s.searchAndRead("res.partner", ("email" ilike "info@") AND (("is_company" =/= true) OR ("zip" === "60623")), "category_id")
+      obs <- s.searchAndRead("res.partner", ("email" ilike "info@") AND (("is_company" =/= true) OR ("zip" === "60623")), "category_id", limit = 10)
     } yield obs
 
-    allObs.onComplete((value: Try[List[List[(String, Any)]]]) => value match {
-      case Success(s) => s.foreach(_ foreach println)
+    allObs.onComplete((value: Try[ResultType]) => value match {
+      case Success(s) => println("success")//s.foreach(_ foreach println)
       case Failure(f) => fail(f)
     })
 

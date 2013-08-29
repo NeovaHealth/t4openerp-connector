@@ -1,121 +1,252 @@
+/*
+ * Copyright (C) 2013 Tactix4
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.tactix4.openerpConnector.domain
 
 import com.tactix4.openerpConnector.transport._
-import com.tactix4.openerpConnector.field._
-import com.tactix4.openerpConnector.transport.TransportArray
-import scala.Some
+import com.tactix4.openerpConnector._
+import scala.language.implicitConversions
 
 /**
+ * A trait to specify Domains for [[com.tactix4.openerpConnector.OpenERPSession]] queries
+ *
+ * Used in conjunction with the implicits defined in Domains companion object, a DSL for specifying complex
+ * domains is provided
+ *
+ * {{{
+ *
+ * val complexDomain = ("name" === "ABC") AND ("lang" =/= "EN") AND (NOT("department" child_of "HR") OR ("country" like "Germany"))
+ *
+ * }}}
+ *
+ * Associativity is to the '''LEFT''' - so parenthesis should be used to make precedence unambiguous
+ *
+ * {{{
+ *
+ * // equates to all all Jim's with ID's of one, OR Jills.
+ * val ambig = ("id" === 1) AND ("name" === "jim") OR ("name" == "jill")
+ *
+ * // equates to any Jim or Jill with an id of 1
+ * val nonAmbig = ("id" === 1) AND (("name" === "jim") OR ("name" == "jill"))
+ *
+ * }}}
+ *
+ * Domain's subclasses [[com.tactix4.openerpConnector.domain.AND]] and [[com.tactix4.openerpConnector.domain.OR]] build up tree structures
+ * of [[com.tactix4.openerpConnector.domain.DomainTuple]] expressions, which are constructed from a fieldName, an operator and a value.
+ *
+ * [[com.tactix4.openerpConnector.domain.NOT]] can be applied only to a single DomainTuple and for that reason its factory method is found in
+ * DomainTuple rather than Domain
+ *
+ *
+ *
  * @author max@tactix4.com
- *         7/9/13
- *
- *         can be used to easily specify Domains for queries e.g.
- *
- *         ("name" === "ABC") AND ("lang" =/= "EN") AND (NOT("department" child_of "HR") OR ("country" like "Germany"))
- *
- *         associativity is to the LEFT - so parenthesis should be used to make precedence unambiguous
- *
- *         ("id" === 1) AND ("name" === "jim") OR ("name" == "jill")
- *
- *         equates to all all Jim's with ID's of one, OR Jills.
- *
- *         ("id" === 1) AND (("name" === "jim") OR ("name" == "jill"))
- *
- *         equates to any Jim or Jill with an id of 1
- *
+ *  7/9/13
  */
 
-sealed trait Domain {
+sealed abstract class Domain {
+  /**
+   * A factory method for the [[com.tactix4.openerpConnector.domain.AND]] class
+   * @param that the domain to AND with
+   * @return a Domain which represents the conjunction of the argument and the calling object
+   */
+  def AND(that: Domain) : Domain = new AND(this, that)
 
-  def AND(that: Domain) = new AND(this, that)
-
-  def OR(that: Domain) = new OR(this, that)
-
-  def toString: String
+  /**
+   * A factory method for the [[com.tactix4.openerpConnector.domain.OR]] class
+   * @param that the domain to OR with
+   * @return a Domain which represents the disjunction of the argument and the calling object
+   */
+  def OR(that: Domain) : Domain = new OR(this, that)
 }
 
+/**
+ * A class to represent a conjunction of two Domains
+ * @param left
+ * @param right
+ */
+case class AND(left: Domain, right: Domain) extends Domain {
+  override def toString = left + "," + right
+}
+
+/**
+ * A class to represent a disjunction of two Domains
+ * @param left
+ * @param right
+ */
+case class OR(left: Domain, right: Domain) extends Domain {
+  override def toString = "'|'," + left + "," + right
+}
+
+/**
+ * A class to represent a negation of a DomainTuple
+ * @param value
+ */
+case class NOT(value: DomainTuple) extends Domain {
+  override def toString = "'!'," + value
+}
+
+/**
+ * A class to represent a leaf-node in our tree structure of logical operations
+ *
+ * It constitutes one unit of domain filtering - to be combined with [[com.tactix4.openerpConnector.domain.AND]], [[com.tactix4.openerpConnector.domain.OR]],
+ * or negated with [[com.tactix4.openerpConnector.domain.NOT]]
+ * @param fieldName the name of the field on which we are applying a filter
+ * @param operator the operator of the filter
+ * @param value the value of the filter
+ */
+case class DomainTuple(fieldName: String, operator: String, value:TransportDataType) extends Domain {
+  override def toString = "('" + fieldName + "','" + operator + "','" + value + "')"
+
+  /**
+   * Factory method for [[com.tactix4.openerpConnector.domain.NOT]] class
+   * @return a negated version of this
+   */
+  def NOT = new NOT(this)
+}
+
+/**
+ * A class used to construct DomainTuples - used via the implicit in the Domain's companion object
+ * @param s the fieldName on which to apply the domain filter
+ */
+final class DomainOperator(s: String) {
+
+  /**
+   * Equality
+   * @param n the value of equality we are testing for
+   * @return a DomainTuple representing equality
+   */
+  def ===(n: TransportDataType)           = DomainTuple(s, "=", n)
+
+  /**
+   * Inequality
+   * @param n the value of inequality we are testing for
+   * @return a DomainTuple representing inequality
+   */
+  def =/=(n: TransportDataType)           = DomainTuple(s, "!=", n)
+
+  /**
+   * LessThan
+   * @param n the value which we are asserting is LessThan `this`
+   * @return a DomainTuple representing a LessThan domain filter
+   */
+  def lt(n: TransportDataType)            = DomainTuple(s, "<", n)
+  /**
+   * GreaterThan
+   * @param n the value which we are asserting is GreaterThan `this`
+   * @return a DomainTuple representing a GreaterThan domain filter
+   */
+  def gt(n: TransportDataType)            = DomainTuple(s, ">", n)
+
+  /**
+   * Like
+   * @param n the value which `this` is like
+   * @return a DomainTuple representing an SQLish like pattern match
+   */
+  def like(n: TransportDataType)          = DomainTuple(s, "like", n)
+
+  /**
+   * Case insensitive Like
+   * @param n the value which `this` is like
+   * @return a DomainTuple representing an SQLish like pattern match - case insensitive
+   */
+  def ilike(n: TransportDataType)         = DomainTuple(s, "ilike", n)
+
+  /**
+   * In
+   * @param n a list or tuple that the value of `this` should be in
+   * @return a DomainTuple representing a test for s being in n
+   */
+  def in(n: TransportDataType)            = DomainTuple(s, "in", n)
+  /**
+   * Not In
+   * @param n a list or tuple that the value of `this` should not be in
+   * @return a DomainTuple representing a test for s not being in n
+   */
+  def not_in(n: TransportDataType)        = DomainTuple(s, "not in", n)
+
+  /**
+   * Child Of
+   * The child_of operator will look for records who are children or grand-children of a given record,
+   * according to the semantics of this model (i.e following the relationship field named by self._parent_name, by default parent_id.
+   * @param n the parent of `this`
+   * @return a DomainTuple representing a test for a child_of relationship
+   */
+  def child_of(n: TransportDataType)      = DomainTuple(s, "child_of", n)
+
+  /**
+   * parent left
+   * @see http://stackoverflow.com/questions/11861436/parent-left-and-parent-right-in-openerp
+   * @param n the subject being tested for being a child of `this`
+   * @return a DomainTuple representing a test for a parent_left relationship
+   */
+  def parent_left(n: TransportDataType)   = DomainTuple(s, "parent_left", n)
+  /**
+   * parent right
+   * @see [[http://stackoverflow.com/questions/11861436/parent-left-and-parent-right-in-openerp]]
+   * @param n the subject being tested for being a child of `this`
+   * @return a DomainTuple representing a test for a parent_right relationship
+   */
+  def parent_right(n: TransportDataType)  = DomainTuple(s, "parent_right", n)
+}
+
+/**
+ * Companion object for [[com.tactix4.openerpConnector.domain.Domain]] providing some implicit conversions
+ * as well as an implicit object for conversion to TransportDataTypes
+ */
 object Domain {
 
-  type OpenERPDomain = Domain
-
+  /**
+   * Implicit to convert a Domain to an Option[Domain], used to clarify request parameters in [[com.tactix4.openerpConnector.OpenERPSession]]
+   * @param d the Domain
+   * @return an Option[d]
+   */
   implicit def DomainToOptionDomain(d: Domain) : Option[Domain] = Some(d)
+
+  /**
+   * Implicit to convert a string to a DomainOperator.
+   * This is the main starting point for creating Domains
+   * @param s the string which goes on to represent the fieldName of a DomainTuple
+   * @return a DomainOperator
+   */
   implicit def StringToDomainOperator(s: String): DomainOperator = new DomainOperator(s)
 
-//  implicit def DomainTupleToTransportArray(d: DomainTuple): TransportArray = TransportArray(List(d.value._1, d.value._2, d.value._3))
 
-  implicit def DomainToArray(t: Domain): Array[Any] = {
-    //TODO: make tail recursive (trampolines?)
-    def loop(tree: Domain): List[Any] = {
-      tree match {
-        case e: AND => loop(e.left) ++ loop(e.right)
-        case e: OR => "|" :: loop(e.left) ++ loop(e.right)
-        case e: NOT => "!" :: Array(e.value.value._1, e.value.value._2, e.value.value._3) :: Nil
-        case e: DomainTuple => Array(e.value._1, e.value._2, e.value._3) :: Nil
-      }
-    }
-    loop(t).toArray
-  }
-
-  implicit def DomainTupleToDomain(dt: DomainTuple): Domain = dt
-
-  implicit object DomainToTransportData extends TransportDataFormat[Domain]{
-
+  /**
+   * Provides the TransportDataConverter[Domain] implementation which enables the [[com.tactix4.openerpConnector.transport.PimpedAny]]
+   * call to .toTransportDataType()
+   */
+  implicit object DomainToTransportData extends TransportDataConverter[Domain]{
+    //TODO: make tail recursive
     def write(obj: Domain): TransportDataType = {
-      def loop(tree: Domain): List[TransportDataType] = {
+      def loop(tree: Domain): List[TransportDataType] =
         tree match {
           case e: AND => "&" :: loop(e.left) ++ loop(e.right)
           case e: OR => "|" :: loop(e.left) ++ loop(e.right)
-          case e: NOT => "!" :: TransportArray(List(e.value.value._1, e.value.value._2, e.value.value._3)) :: Nil
-          case e: DomainTuple => TransportArray(List(e.value._1, e.value._2, e.value._3)) :: Nil
+          case e: NOT => "!" :: TransportArrayType(List(TransportString(e.value.fieldName), TransportString(e.value.operator), e.value.value)) :: Nil
+          case e: DomainTuple => TransportArrayType(List(TransportString(e.fieldName), TransportString(e.operator), e.value)) :: Nil
         }
-      }
-      TransportArray(loop(obj))
+      TransportArrayType(loop(obj))
     }
      def read(obj: TransportDataType) = ??? //not needed
    }
 }
 
-case class AND(left: Domain, right: Domain) extends Domain {
-  override def toString = left + "," + right
-}
 
-case class OR(left: Domain, right: Domain) extends Domain {
-  override def toString = "'|'," + left + "," + right
-}
 
-case class NOT(value: DomainTuple) extends Domain {
-  override def toString = "'!'," + value
-}
-
-case class DomainTuple(value: (String, String, TransportDataType)) extends Domain {
-  override def toString = "('" + value._1 + "','" + value._2 + "','" + value._3 + "')"
-
-  def NOT = new NOT(this)
-}
-
-sealed class DomainOperator(s: String) {
-  def ===(n: TransportDataType) = DomainTuple(s, "=", n)
-
-  def =/=(n: TransportDataType) = DomainTuple(s, "!=", n)
-
-  def lt(n: TransportDataType) = DomainTuple(s, "<", n)
-
-  def gt(n: TransportDataType) = DomainTuple(s, ">", n)
-
-  def like(n: TransportDataType) = DomainTuple(s, "like", n)
-
-  def ilike(n: TransportDataType) = DomainTuple(s, "ilike", n)
-
-  def in(n: TransportDataType) = DomainTuple(s, "in", n)
-
-  def not_in(n: TransportDataType) = DomainTuple(s, "not in", n)
-
-  def child_of(n: TransportDataType) = DomainTuple(s, "child_of", n)
-
-  def parent_left(n: TransportDataType) = DomainTuple(s, "parent_left", n)
-
-  def parent_right(n: TransportDataType) = DomainTuple(s, "parent_right", n)
-}
 
 
 

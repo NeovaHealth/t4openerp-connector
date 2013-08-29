@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2013 Tactix4
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.tactix4.openerpConnector
 
 import com.typesafe.config._
@@ -12,6 +29,8 @@ import com.tactix4.openerpConnector.domain.Domain._
 
 import com.tactix4.openerpConnector.transport._
 import OpenERPSession._
+import com.tactix4.openerpConnector.exception.OpenERPException
+
 /**
  * Created by max@tactix4.com
  * 5/20/13
@@ -26,7 +45,7 @@ class OpenERPMany2ManyTest extends FunSuite with Futures {
   val openerpHost = conf.getString("openERPServer.hostname")
   val openerpPort = conf.getInt("openERPServer.port")
 
-  val proxy = new OpenERPProxy("http", openerpHost,openerpPort)
+  val proxy = new OpenERPConnector("http", openerpHost,openerpPort)
 
   val session = proxy.startSession(username,password,database)
 
@@ -36,7 +55,7 @@ class OpenERPMany2ManyTest extends FunSuite with Futures {
       r <- s.searchAndRead(model="res.partner", fields="category_id")
     } yield r
 
-    result.onComplete((value: Try[List[List[(String, Any)]]]) => value match{
+    result.onComplete((value: Try[ResultType]) => value match{
       case Success(s) => println(s)
       case Failure(f) => fail(f)
     })
@@ -51,7 +70,7 @@ class OpenERPMany2ManyTest extends FunSuite with Futures {
       r <- s.searchAndRead("res.partner", "category_id" =/= false, "category_id")
     } yield r
 
-    result.onComplete((value: Try[List[List[(String, Any)]]]) => value match{
+    result.onComplete((value: Try[ResultType]) => value match{
       case Success(s) => println(s)
       case Failure(f) => fail(f)
     })

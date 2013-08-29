@@ -1,92 +1,61 @@
+/*
+ * Copyright (C) 2013 Tactix4
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.tactix4.openerpConnector.transport
 
-import scala.annotation.implicitNotFound
-
 import scala.concurrent.Future
-import scalaz._
-import Scalaz._
-
+import com.tactix4.openerpConnector._
 
 /**
- * @author max@tactix4.com
+ * Adaptor to be implemented for each transport mechanism supported
+ * currently only XML-RPC but soon to be JSON-RPC
+ *
+ *  @author max@tactix4.com
  *         7/10/13
  *
- *         Adaptor to be implemented for each transport mechanism supported
- *         currently only xmlrpc but soon to be jsonrpc
  */
 trait OpenERPTransportAdaptor {
+  /**
+   * send an RPC request over the implementing protocol
+   * @param config the [[com.tactix4.openerpConnector.transport.OpenERPTransportAdaptorConfig]] to use
+   * @param methodName the remote method to call
+   * @param params a list of parameters to supply
+   * @return A Future[TransportResponse] containing the response from the server
+   */
   def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: List[TransportDataType]) : Future[TransportResponse]
-  def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: TransportDataType*): Future[TransportResponse]= {
+  /**
+   * send an RPC request over the implementing protocol
+   * @param config the [[com.tactix4.openerpConnector.transport.OpenERPTransportAdaptorConfig]] to use
+   * @param methodName the remote method to call
+   * @param params the parameters to supply
+   * @return A Future[TransportResponse] containing the response from the server
+   */
+  def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: TransportDataType*) : Future[TransportResponse]= {
     sendRequest(config, methodName,params.toList)
   }
 }
 
-
-class PimpedAny[T](any: T) {
-  def toTransportDataType(implicit writer: TransportDataWriter[T]): TransportDataType = writer.write(any)
-}
-
-sealed abstract class TransportDataType{
-  def convertTo[T: TransportDataReader]: T = transportDataReader[T].read(this)
-  def toScalaType:Any
-
-}
-
-case class TransportNumber[T](value: T)(implicit num: Numeric[T]) extends TransportDataType{
-  def toScalaType:T = value
-
-}
-
-case class TransportBoolean(value: Boolean) extends TransportDataType{
-  def toScalaType:Boolean = value
-
-}
-
-case class TransportString(value: String) extends TransportDataType{
-  def toScalaType:String = value
-}
-
-case class TransportArray(value: List[TransportDataType]) extends TransportDataType{
-  def toScalaType:List[Any] = value.map(_.toScalaType)
-}
-
-case class TransportMap(value: List[(TransportString, TransportDataType)]) extends TransportDataType {
-  def getKeys : List[String] = {
-    value.map(_._1.value)
-  }
-  def toScalaType:List[(String,Any)] = value.map((t: (TransportString, TransportDataType)) => (t._1.value, t._2.toScalaType))
-}
-
-case class TransportNull(value: Null) extends TransportDataType{
- def toScalaType = null
-}
-
-@implicitNotFound(msg = "Can not find TransportDataReader for type ${T}")
-trait TransportDataReader[T] {
-  def read(obj: TransportDataType): T
-}
-
-object TransportDataReader {
-  implicit def func2Reader[T](f: TransportDataType => T): TransportDataReader[T] = new TransportDataReader[T] {
-    def read(obj: TransportDataType) = f(obj)
-  }
-}
-
-@implicitNotFound(msg = "Can not find TransportDataWriter for type ${T}")
-trait TransportDataWriter[T] {
-  def write(obj: T): TransportDataType
-}
-
-object TransportDataWriter {
-  implicit def func2Writer[T](f: T => TransportDataType): TransportDataWriter[T] = new TransportDataWriter[T] {
-    def write(obj: T) = f(obj)
-  }
-}
-
-trait TransportDataFormat[T] extends TransportDataWriter[T] with TransportDataReader[T] {
-
-
-}
-
-
+/**
+ * Class to represent the transport adaptors config
+ * @param protocol which protocol to use HTTP/HTTPS
+ * @param host the host to connect to
+ * @param port the port to use
+ * @param path the path of the host to POST to
+ * @param headers optional headers to attach the the outgoing requests
+ */
 case class OpenERPTransportAdaptorConfig(protocol: String, host: String, port: Int, var path: String, headers: Map[String, String] = Map())
+

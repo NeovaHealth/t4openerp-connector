@@ -17,22 +17,19 @@
 
 package com.tactix4.openerpConnector
 
-import com.typesafe.config._
-import org.scalatest.concurrent._
 import org.scalatest.FunSuite
-import scala.concurrent.Await
-import scala.util.{Try, Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Awaitable, Await, Future}
 import scala.concurrent.duration._
-import com.tactix4.openerpConnector.OpenERPSession._
-import com.tactix4.openerpConnector.transport._
-import com.tactix4.openerpConnector.exception.OpenERPException
+import com.typesafe.config.ConfigFactory
 
 /**
- * Created by max@tactix4.com
- * 5/20/13
+ * @author max@tactix4.com
+ *         16/08/2013
  */
-class OpenERPSelectionTest extends FunSuite with Futures {
+class OpenERPSessionTest extends FunSuite {
+
+
 
   val conf = ConfigFactory.load()
 
@@ -46,35 +43,41 @@ class OpenERPSelectionTest extends FunSuite with Futures {
 
   val session = proxy.startSession(username,password,database)
 
-  test("write country_id with invalid value") {
 
-    val result = for {
-      s <- session
-      w <- s.write("res.partner", 1, List("tz" -> "Sepekte/Ubulis"))
-    } yield w
+  test("making sure the modelAdaptor memoized hashmap is memoizing"){
 
-    result.onComplete((value: Try[Boolean]) => value match{
-      case Failure(f) => fail(f)
-      case Success(s) => println("success")
-    })
-    intercept[OpenERPException]{
-      Await.result(result, 3 seconds)
+    /**
+     * ghetto timing function
+     *
+     * @param a the function to test
+     * @tparam A the function type (must be subtype of Awaitable[_])
+     * @return the time taken to execute the function
+     */
+
+    def time[A <: Awaitable[_]](a: => Awaitable[_]) = {
+      val now = System.nanoTime
+      Await.result(a, 10 seconds)
+      (System.nanoTime - now) / 1000
     }
 
-  }
+    val r = time { session.flatMap(_.getFields("res.users"))}
+    val r2 = time{ session.flatMap(_.getFields("res.users"))}
+    val r3 = time{ session.flatMap(_.getFields("res.users"))}
+    val r4 = time{ session.flatMap(_.getFields("res.users"))}
+    val r5 = time{ session.flatMap(_.getFields("res.users"))}
 
-  test("write country_id with valid value") {
+    assert(r2 < r && r3 < r && r4 < r && r5 < r)
 
-    val result = for {
-      s <- session
-      w <- s.write("res.partner", 1, List("tz" -> "Europe/London"))
-    } yield w
+    val t = time{ session.flatMap(_.getFields("res.partner"))}
+    val t2 = time{ session.flatMap(_.getFields("res.partner"))}
+    val t3 = time{ session.flatMap(_.getFields("res.partner"))}
+    val t4 = time{ session.flatMap(_.getFields("res.partner"))}
+    val t5 = time{ session.flatMap(_.getFields("res.partner"))}
 
-    result.onComplete((value: Try[Boolean]) => value match{
-      case Failure(f) => fail(f)
-      case Success(s) => println("success")
-    })
-    Await.result(result, 3 seconds)
+    assert(t2 < t && t3 < t && t4 < t && t5 < t)
+
+
+
 
   }
 

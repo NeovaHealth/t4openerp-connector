@@ -14,7 +14,7 @@ resolvers += "Local SBT Repository" at Path.userHome.asFile.toURI.toURL+".ivy2/l
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.2"
 
-libraryDependencies += "simplexmlrpc" %% "simplexmlrpc" % "1.0-SNAPSHOT"
+libraryDependencies += "com.tactix4" %% "xmlrpc" % "1.0"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.10.1" % "test"
 
