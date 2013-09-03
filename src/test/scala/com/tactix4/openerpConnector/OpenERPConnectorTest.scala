@@ -57,7 +57,7 @@ class OpenERPConnectorTest extends FunSuite with Futures {
   test("Read from res.partner table") {
     val ids = for {
       s <- session
-      i <-  s.read("res.partner",1)
+      i <-  s.read("res.partner",List(1,2,3))
     } yield i
 
     ids.onComplete((value: Try[ResultType]) => value match {
@@ -180,6 +180,19 @@ class OpenERPConnectorTest extends FunSuite with Futures {
       case Success(s) => println("partner was deleted. Or not. I'm not sure.")
       case Failure(f) => fail(f)
     })
+    Await.result(result, 2 seconds)
+  }
+  test("call arbitrary method on openerp host") {
+    val result = for {
+      s <- session
+      x <- s.callMethod("res.partner", "read", List(1,2,3), List("email"))
+    } yield x
+
+    result.onComplete(_ match {
+      case Success(s) => println(s)
+      case Failure(f) => fail(f)
+    })
+
     Await.result(result, 2 seconds)
   }
 

@@ -397,7 +397,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "unlink", ids, context.toTransportDataType)
 
     result.onComplete((value: Try[TransportResponse]) => value match {
-      case Success(s) => s.fold((error: String) => {logger.error(error)},
+      case Success(s) => s.fold((error: String) => {logger.error(error); promise.failure(new OpenERPException(error))},
         (result: TransportDataType) => result  match {
             case TransportBoolean(b) => promise.complete(Try(b))
             case fail => promise.failure(unexpected(result.toString))
@@ -408,7 +408,28 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     promise.future
   }
 
+  /**
+   * Call an arbitrary object method on an object
+   * @param model the model where the method exists
+   * @param methodName the method to call
+   * @param params the parameters the method requires
+   */
+  def callMethod(model: String, methodName: String, params: TransportDataType*)  : Future[TransportDataType] = {
 
+    config.path = RPCService.RPC_OBJECT
+
+    val promise = Promise[TransportDataType]()
+    val result = transportAdaptor.sendRequest(config, "execute", TransportString(database) :: TransportNumber(uid) :: TransportString(password) :: TransportString(model) :: TransportString(methodName) :: params.toList ++ (context.toTransportDataType :: Nil))
+
+    result.onComplete((value: Try[TransportResponse]) => value match {
+      case Success(s) => s.fold((error: String) => {logger.error(error); promise.failure(new OpenERPException(error))},
+        r => promise.success(r))
+      case Failure(f) => promise.failure(f)
+    })
+
+    promise.future
+
+    }
 
 }
 
