@@ -1,8 +1,10 @@
 name := "openERPConnector"
 
-version := "1.0"
+organization:= "com.tactix4"
 
-scalaVersion := "2.10.1"
+version := "1.0-SNAPSHOT"
+
+scalaVersion := "2.10.2"
 
 resolvers ++= Seq(
   "Sonatype Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
@@ -14,7 +16,7 @@ resolvers += "Local SBT Repository" at Path.userHome.asFile.toURI.toURL+".ivy2/l
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.2"
 
-libraryDependencies += "com.tactix4" %% "xmlrpc" % "1.0"
+libraryDependencies += "com.tactix4" %% "xmlrpc" % "1.0-SNAPSHOT"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.10.1" % "test"
 
@@ -28,5 +30,18 @@ libraryDependencies += "com.typesafe" %% "scalalogging-slf4j" % "1.0.1"
 
 libraryDependencies += "com.typesafe" % "config" % "1.0.2"
 
-
 publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
+
+osgiSettings
+
+OsgiKeys.importPackage ++= Seq(
+  "*"
+)
+
+OsgiKeys.exportPackage ++= Seq(
+    "com.tactix4.openerpConnector",
+    "com.tactix4.openerpConnector.domain",
+    "com.tactix4.openerpConnector.exception",
+    "com.tactix4.openerpConnector.field",
+    "com.tactix4.openerpConnector.transport"
+)

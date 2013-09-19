@@ -27,7 +27,6 @@ import com.tactix4.openerpConnector.domain.Domain
 import transport._
 import com.tactix4.openerpConnector.exception.OpenERPException
 import com.tactix4.openerpConnector.field.Field
-
 /**
  * An OpenERPSession represents a current session to an OpenERP server.
  *
@@ -272,13 +271,13 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return a Future containing the id of the new record
    * @throws OpenERPException if the creation fails
    */
-  def create(model: String, fields: List[(String, TransportDataType)]) : Future[Int] = {
+  def create(model: String, fields: List[(String, Any)]) : Future[Int] = {
      logger.info("executing create with fields: " + fields)
 
     config.path = RPCService.RPC_OBJECT
 
     val promise = Promise[Int]()
-    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "create",TransportMapType(fields), context.toTransportDataType)
+    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "create",TransportMapType(fields.map(x=>x._1 -> x._2.toTransportDataType)), context.toTransportDataType)
 
     result.onComplete((value: Try[TransportResponse]) => value match{
       case Success(s) => s.fold(
@@ -307,8 +306,8 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return a Future[True]
    * @throws OpenERPException if the write fails
    */
-  def write(model: String, ids: List[Int], fields: List[(String, TransportDataType)]) : Future[Boolean] = {
-    val processedFields: Future[List[(String, TransportDataType)]] = validateParams(model, fields)
+  def write(model: String, ids: List[Int], fields: List[(String, Any)]) : Future[Boolean] = {
+    val processedFields: Future[List[(String, TransportDataType)]] = validateParams(model, fields.map(x=>x._1 -> x._2.toTransportDataType))
 
     config.path = RPCService.RPC_OBJECT
 
@@ -414,16 +413,16 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @param methodName the method to call
    * @param params the parameters the method requires
    */
-  def callMethod(model: String, methodName: String, params: TransportDataType*)  : Future[TransportDataType] = {
+  def callMethod(model: String, methodName: String, params: Any*)  : Future[Any] = {
 
     config.path = RPCService.RPC_OBJECT
 
-    val promise = Promise[TransportDataType]()
-    val result = transportAdaptor.sendRequest(config, "execute", TransportString(database) :: TransportNumber(uid) :: TransportString(password) :: TransportString(model) :: TransportString(methodName) :: params.toList ++ (context.toTransportDataType :: Nil))
+    val promise = Promise[Any]()
+    val result = transportAdaptor.sendRequest(config, "execute", TransportString(database) :: TransportNumber(uid) :: TransportString(password) :: TransportString(model) :: TransportString(methodName) :: params.toList.map(_.toTransportDataType) ++ (context.toTransportDataType :: Nil))
 
     result.onComplete((value: Try[TransportResponse]) => value match {
       case Success(s) => s.fold((error: String) => {logger.error(error); promise.failure(new OpenERPException(error))},
-        r => promise.success(r))
+        r => promise.success(r.value))
       case Failure(f) => promise.failure(f)
     })
 

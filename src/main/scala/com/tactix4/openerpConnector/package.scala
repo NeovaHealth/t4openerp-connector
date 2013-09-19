@@ -19,13 +19,24 @@ package com.tactix4
 
 import scala.language.implicitConversions
 import com.tactix4.openerpConnector.transport._
-
+import scala.reflect.runtime.universe._
 /**
  * @author max@tactix4.com
  *         14/07/2013
  */
 package object openerpConnector{
 
+  implicit object AnyToTransportDataType extends TransportDataConverter[Any] {
+    def read(obj: TransportDataType): Any = obj.value
+    def write(obj: Any): TransportDataType = obj match {
+      case x: Numeric[_] => TransportNumber(x)
+      case x: String  => TransportString(x)
+      case x: Boolean => TransportBoolean(x)
+      case List(x:(_, _),_*) => TransportMapType(obj.asInstanceOf[List[(_,_)]].map(y => y._1.toString -> write(y._2)))
+      case x: List[_] => TransportArrayType(x.map(write))
+      case x => TransportString(x.toString)
+    }
+  }
 
   type TransportArray = TransportArrayType[TransportDataType]
   type TransportMap = TransportMapType[TransportDataType]
