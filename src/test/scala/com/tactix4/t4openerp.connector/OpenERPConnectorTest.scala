@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.openerpConnector
+package com.tactix4.t4openerp.connector
 import com.typesafe.config._
 import org.scalatest.concurrent._
 import org.scalatest.FunSuite
@@ -23,9 +23,9 @@ import scala.concurrent.Await
 import scala.util.{Try, Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import com.tactix4.openerpConnector.domain.Domain._
+import com.tactix4.t4openerp.connector.domain.Domain._
 import OpenERPSession._
-import com.tactix4.openerpConnector.exception.{OpenERPAuthenticationException, OpenERPException}
+import com.tactix4.t4openerp.connector.exception.{OpenERPAuthenticationException, OpenERPException}
 
 /**
  * Created by max@tactix4.com

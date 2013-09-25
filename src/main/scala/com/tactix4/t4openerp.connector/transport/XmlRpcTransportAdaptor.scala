@@ -15,15 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.openerpConnector.transport
+package com.tactix4.t4openerp.connector.transport
 
-import com.tactix4.xmlrpc._
-import com.tactix4.xmlrpc.XmlRpcInt
+import com.tactix4.t4xmlrpc._
+import com.tactix4.t4xmlrpc.XmlRpcInt
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.concurrent.{ExecutionContext, Promise, Future}
 import scala.util.{Failure, Success, Try}
-import com.tactix4.openerpConnector._
+import com.tactix4.t4openerp.connector._
 import ExecutionContext.Implicits.global
+import com.tactix4.t4openerp.connector.TransportResponse
 
 /**
  * Implementation of the OpenERPTransportAdaptor and TransportDataConverter

@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.openerpConnector
+package com.tactix4.t4openerp.connector
 
 import scala.collection.mutable
-import com.tactix4.openerpConnector.transport._
+import com.tactix4.t4openerp.connector.transport._
 import com.typesafe.scalalogging.slf4j.Logging
 
 /**

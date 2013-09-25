@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.openerpConnector.domain
+package com.tactix4.t4openerp.connector.domain
 
-import com.tactix4.openerpConnector.transport._
-import com.tactix4.openerpConnector._
+import com.tactix4.t4openerp.connector.transport._
+import com.tactix4.t4openerp.connector._
 import scala.language.implicitConversions
 
 /**
- * A trait to specify Domains for [[com.tactix4.openerpConnector.OpenERPSession]] queries
+ * A trait to specify Domains for [[com.tactix4.t4openerp.connector.OpenERPSession]] queries
  *
  * Used in conjunction with the implicits defined in Domains companion object, a DSL for specifying complex
  * domains is provided
@@ -45,10 +45,10 @@ import scala.language.implicitConversions
  *
  * }}}
  *
- * Domain's subclasses [[com.tactix4.openerpConnector.domain.AND]] and [[com.tactix4.openerpConnector.domain.OR]] build up tree structures
- * of [[com.tactix4.openerpConnector.domain.DomainTuple]] expressions, which are constructed from a fieldName, an operator and a value.
+ * Domain's subclasses [[com.tactix4.t4openerp.connector.domain.AND]] and [[com.tactix4.t4openerp.connector.domain.OR]] build up tree structures
+ * of [[com.tactix4.t4openerp.connector.domain.DomainTuple]] expressions, which are constructed from a fieldName, an operator and a value.
  *
- * [[com.tactix4.openerpConnector.domain.NOT]] can be applied only to a single DomainTuple and for that reason its factory method is found in
+ * [[com.tactix4.t4openerp.connector.domain.NOT]] can be applied only to a single DomainTuple and for that reason its factory method is found in
  * DomainTuple rather than Domain
  *
  *
@@ -59,14 +59,14 @@ import scala.language.implicitConversions
 
 sealed abstract class Domain {
   /**
-   * A factory method for the [[com.tactix4.openerpConnector.domain.AND]] class
+   * A factory method for the [[com.tactix4.t4openerp.connector.domain.AND]] class
    * @param that the domain to AND with
    * @return a Domain which represents the conjunction of the argument and the calling object
    */
   def AND(that: Domain) : Domain = new AND(this, that)
 
   /**
-   * A factory method for the [[com.tactix4.openerpConnector.domain.OR]] class
+   * A factory method for the [[com.tactix4.t4openerp.connector.domain.OR]] class
    * @param that the domain to OR with
    * @return a Domain which represents the disjunction of the argument and the calling object
    */
@@ -102,8 +102,8 @@ case class NOT(value: DomainTuple) extends Domain {
 /**
  * A class to represent a leaf-node in our tree structure of logical operations
  *
- * It constitutes one unit of domain filtering - to be combined with [[com.tactix4.openerpConnector.domain.AND]], [[com.tactix4.openerpConnector.domain.OR]],
- * or negated with [[com.tactix4.openerpConnector.domain.NOT]]
+ * It constitutes one unit of domain filtering - to be combined with [[com.tactix4.t4openerp.connector.domain.AND]], [[com.tactix4.t4openerp.connector.domain.OR]],
+ * or negated with [[com.tactix4.t4openerp.connector.domain.NOT]]
  * @param fieldName the name of the field on which we are applying a filter
  * @param operator the operator of the filter
  * @param value the value of the filter
@@ -112,7 +112,7 @@ case class DomainTuple(fieldName: String, operator: String, value:TransportDataT
   override def toString = "('" + fieldName + "','" + operator + "','" + value + "')"
 
   /**
-   * Factory method for [[com.tactix4.openerpConnector.domain.NOT]] class
+   * Factory method for [[com.tactix4.t4openerp.connector.domain.NOT]] class
    * @return a negated version of this
    */
   def NOT = new NOT(this)
@@ -204,13 +204,13 @@ final class DomainOperator(s: String) {
 }
 
 /**
- * Companion object for [[com.tactix4.openerpConnector.domain.Domain]] providing some implicit conversions
+ * Companion object for [[com.tactix4.t4openerp.connector.domain.Domain]] providing some implicit conversions
  * as well as an implicit object for conversion to TransportDataTypes
  */
 object Domain {
 
   /**
-   * Implicit to convert a Domain to an Option[Domain], used to clarify request parameters in [[com.tactix4.openerpConnector.OpenERPSession]]
+   * Implicit to convert a Domain to an Option[Domain], used to clarify request parameters in [[com.tactix4.t4openerp.connector.OpenERPSession]]
    * @param d the Domain
    * @return an Option[d]
    */
@@ -226,7 +226,7 @@ object Domain {
 
 
   /**
-   * Provides the TransportDataConverter[Domain] implementation which enables the [[com.tactix4.openerpConnector.transport.PimpedAny]]
+   * Provides the TransportDataConverter[Domain] implementation which enables the [[com.tactix4.t4openerp.connector.transport.PimpedAny]]
    * call to .toTransportDataType()
    */
   implicit object DomainToTransportData extends TransportDataConverter[Domain]{

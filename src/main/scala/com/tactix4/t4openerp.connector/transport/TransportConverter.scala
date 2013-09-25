@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.openerpConnector.transport
+package com.tactix4.t4openerp.connector.transport
 
 import scala.annotation.implicitNotFound
 
@@ -23,7 +23,7 @@ import scala.language.implicitConversions
 /**
  *
  * Typeclass for converting to-from the transport data type
- * Any Transport implementation should instantiate an object of type [[com.tactix4.openerpConnector.transport.TransportDataConverter[TheirType]]]
+ * Any Transport implementation should instantiate an object of type [[com.tactix4.t4openerp.connector.transport.TransportDataConverter[TheirType]]]
  * and provide the read/write methods
 
  * @author max@tactix4.com

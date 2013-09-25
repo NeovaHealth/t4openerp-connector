@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.openerpConnector
+package com.tactix4.t4openerp.connector
 
-import com.tactix4.openerpConnector.transport._
+import com.tactix4.t4openerp.connector.transport._
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.concurrent.{ExecutionContext, Promise, Future}
 import scala.util.{Try, Success, Failure}
 import ExecutionContext.Implicits.global
 import scala.language.implicitConversions
-import com.tactix4.openerpConnector.exception.{OpenERPAuthenticationException, OpenERPException}
+import com.tactix4.t4openerp.connector.exception.{OpenERPAuthenticationException, OpenERPException}
 
 /**
  * Entry point into library and used to create an OpenERPSession

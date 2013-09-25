@@ -1,4 +1,4 @@
-name := "openERPConnector"
+name := "t4openerp-connector"
 
 organization:= "com.tactix4"
 
@@ -34,14 +34,17 @@ publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.
 
 osgiSettings
 
+OsgiKeys.bundleSymbolicName := "Tactix4 OpenERP-Connector"
+
+
 OsgiKeys.importPackage ++= Seq(
   "*"
 )
 
 OsgiKeys.exportPackage ++= Seq(
-    "com.tactix4.openerpConnector",
-    "com.tactix4.openerpConnector.domain",
-    "com.tactix4.openerpConnector.exception",
-    "com.tactix4.openerpConnector.field",
-    "com.tactix4.openerpConnector.transport"
+    "com.tactix4.t4openerp.connector",
+    "com.tactix4.t4openerp.connector.domain",
+    "com.tactix4.t4openerp.connector.exception",
+    "com.tactix4.t4openerp.connector.field",
+    "com.tactix4.t4openerp.connector.transport"
 )

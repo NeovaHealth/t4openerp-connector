@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.openerpConnector.transport
+package com.tactix4.t4openerp.connector.transport
 
 import scala.concurrent.Future
-import com.tactix4.openerpConnector._
+import com.tactix4.t4openerp.connector._
 
 /**
  * Adaptor to be implemented for each transport mechanism supported
@@ -31,7 +31,7 @@ import com.tactix4.openerpConnector._
 trait OpenERPTransportAdaptor {
   /**
    * send an RPC request over the implementing protocol
-   * @param config the [[com.tactix4.openerpConnector.transport.OpenERPTransportAdaptorConfig]] to use
+   * @param config the [[com.tactix4.t4openerp.connector.transport.OpenERPTransportAdaptorConfig]] to use
    * @param methodName the remote method to call
    * @param params a list of parameters to supply
    * @return A Future[TransportResponse] containing the response from the server
@@ -39,7 +39,7 @@ trait OpenERPTransportAdaptor {
   def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: List[TransportDataType]) : Future[TransportResponse]
   /**
    * send an RPC request over the implementing protocol
-   * @param config the [[com.tactix4.openerpConnector.transport.OpenERPTransportAdaptorConfig]] to use
+   * @param config the [[com.tactix4.t4openerp.connector.transport.OpenERPTransportAdaptorConfig]] to use
    * @param methodName the remote method to call
    * @param params the parameters to supply
    * @return A Future[TransportResponse] containing the response from the server

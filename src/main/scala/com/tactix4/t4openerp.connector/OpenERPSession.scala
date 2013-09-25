@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.openerpConnector
+package com.tactix4.t4openerp.connector
 
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.concurrent.{ExecutionContext, Promise, Future}
@@ -23,10 +23,10 @@ import scala.util.{Try, Success, Failure}
 import scalaz.Memo._
 import ExecutionContext.Implicits.global
 import scala.language.implicitConversions
-import com.tactix4.openerpConnector.domain.Domain
+import com.tactix4.t4openerp.connector.domain.Domain
 import transport._
-import com.tactix4.openerpConnector.exception.OpenERPException
-import com.tactix4.openerpConnector.field.Field
+import com.tactix4.t4openerp.connector.exception.OpenERPException
+import com.tactix4.t4openerp.connector.field.Field
 /**
  * An OpenERPSession represents a current session to an OpenERP server.
  *
@@ -71,9 +71,9 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
   }
 
   /**
-   * convenience method to log error and return an [[com.tactix4.openerpConnector.exception.OpenERPException]]
+   * convenience method to log error and return an [[com.tactix4.t4openerp.connector.exception.OpenERPException]]
    * @param e the error string
-   * @return an [[com.tactix4.openerpConnector.exception.OpenERPException]]
+   * @return an [[com.tactix4.t4openerp.connector.exception.OpenERPException]]
    */
   private[OpenERPSession] def unexpected(e: String) = {
     logger.error("Unexpected response: " + e)
@@ -83,14 +83,14 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
   /**
    * Fetch the fields for this model
    *
-   * @return a [[scala.concurrent.Future]] containing a [[scala.collection.immutable.List]] of [[com.tactix4.openerpConnector.field.Field]]s
-   * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[com.tactix4.openerpConnector.transport.OpenERPTransportAdaptor]]
+   * @return a [[scala.concurrent.Future]] containing a [[scala.collection.immutable.List]] of [[com.tactix4.t4openerp.connector.field.Field]]s
+   * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[com.tactix4.t4openerp.connector.transport.OpenERPTransportAdaptor]]
    */
   private[OpenERPSession] def getFieldsFromModel(model: String): Future[List[Field]] = {
 
     val promise = Promise[List[Field]]()
 
-    transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "fields_get").onComplete(
+    transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "fields_get", TransportArrayType[TransportDataType](Nil), context.toTransportDataType).onComplete(
       _ match {
         case Success(s) =>
           s.fold(
@@ -111,7 +111,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
   }
 
   /**
-   * Fetch the context from the server and populate our [[com.tactix4.openerpConnector.OpenERPContext]] instance
+   * Fetch the context from the server and populate our [[com.tactix4.t4openerp.connector.OpenERPContext]] instance
    * @return true indicating success
    * @throws OpenERPException if the response was not expected
    */
@@ -146,7 +146,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    *
    * @param model the model to which the field belongs
    * @param fieldName the name of the field you want to retrieve
-   * @return a [[scala.concurrent.Future]] containing an [[scala.Option]] of a [[com.tactix4.openerpConnector.field.Field]]
+   * @return a [[scala.concurrent.Future]] containing an [[scala.Option]] of a [[com.tactix4.t4openerp.connector.field.Field]]
    */
   def getField(model: String, fieldName : String): Future[Option[Field]]= {
       getFields(model).map(_.find(_.name == fieldName))
@@ -166,12 +166,12 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
   /**
    * Searches the openerp server with the following parameters
    *
-   * @param domain an [[scala.Option]] contain a [[com.tactix4.openerpConnector.domain.Domain]] object - default is None
+   * @param domain an [[scala.Option]] contain a [[com.tactix4.t4openerp.connector.domain.Domain]] object - default is None
    * @param offset an [[scala.Int]] indicating the number of records to skip - default is 0
    * @param limit an [[scala.Int]] indicating the maximum number of records to return - default is 0
    * @param order a [[java.lang.String]] indicating the column name by which to sort the records - server default is "id"
    * @return a [[scala.concurrent.Future]] containing a [[scala.collection.immutable.List]] of type [[scala.Int]] representing the ids of the matching records
-   * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[com.tactix4.openerpConnector.transport.OpenERPTransportAdaptor]]
+   * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[com.tactix4.t4openerp.connector.transport.OpenERPTransportAdaptor]]
    */
   def search(model: String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = "") : Future[List[Int]]= {
     config.path = RPCService.RPC_OBJECT
@@ -206,7 +206,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @param ids a [[scala.collection.immutable.List]] of type [[scala.Int]] representing the ids of the records to read
    * @param fieldNames a [[scala.collection.immutable.List[String]]]
    * @return
-   * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[com.tactix4.openerpConnector.transport.OpenERPTransportAdaptor]]
+   * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[com.tactix4.t4openerp.connector.transport.OpenERPTransportAdaptor]]
    */
  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil) : Future[ResultType] = {
 

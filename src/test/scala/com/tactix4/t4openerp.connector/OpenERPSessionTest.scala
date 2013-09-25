@@ -15,13 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.openerpConnector
+package com.tactix4.t4openerp.connector
 
 import org.scalatest.FunSuite
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Awaitable, Await, Future}
 import scala.concurrent.duration._
 import com.typesafe.config.ConfigFactory
+import domain.Domain._
+import scala.util.{Failure, Success}
+import com.tactix4.t4openerp.connector.field.Field
 
 /**
  * @author max@tactix4.com
@@ -76,9 +79,28 @@ class OpenERPSessionTest extends FunSuite {
 
     assert(t2 < t && t3 < t && t4 < t && t5 < t)
 
-
-
-
   }
+
+ test("test translation by setting the context language"){
+
+
+   /**
+    * check we actually have german language installed before testing
+    */
+   assume(Await.result(session.flatMap(_.search("res.lang", "code" === "de_DE").map(_.size > 0)), 5 seconds), "don't have german language installed?")
+
+   session.map(_.context.setLanguage("de_DE"))
+   val result = for {
+    s <- session
+    r <- s.getField("res.partner", "name")
+   }yield r
+
+   result.onComplete(_ match {
+     case Success(s) => expectResult("Bezeichnung")(s.flatMap(_.get("string")).getOrElse("fail"))
+     case Failure(f) => fail(f)
+   })
+
+   Await.result(result, 10 seconds)
+ }
 
 }

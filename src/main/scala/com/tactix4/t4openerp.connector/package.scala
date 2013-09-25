@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4
+package com.tactix4.t4openerp
 
 import scala.language.implicitConversions
-import com.tactix4.openerpConnector.transport._
+import com.tactix4.t4openerp.connector.transport._
 import scala.reflect.runtime.universe._
 /**
  * @author max@tactix4.com
  *         14/07/2013
  */
-package object openerpConnector{
+package object connector{
 
   implicit object AnyToTransportDataType extends TransportDataConverter[Any] {
     def read(obj: TransportDataType): Any = obj.value

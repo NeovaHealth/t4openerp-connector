@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.openerpConnector.field
+package com.tactix4.t4openerp.connector.field
 
-import com.tactix4.openerpConnector._
+import com.tactix4.t4openerp.connector._
 import scala.language.implicitConversions
 
 /**
@@ -28,4 +28,13 @@ import scala.language.implicitConversions
  * @param parameters a map of the fields parameters
  * @author max@tactix4.com
  */
-case class Field(name: String, parameters: TransportMap)
+case class Field(name: String, parameters: TransportMap){
+  /**
+   * get a value from the parameters list
+   * @param s the 'key' of the value to get
+   * @return an [[scala.Option[String]] containing the result
+   */
+  def get(s: String):Option[String] = {
+    parameters.value.find(_._1 == s).map(_._2.toString)
+  }
+}

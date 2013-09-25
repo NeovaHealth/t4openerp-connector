@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.openerpConnector.transport
+package com.tactix4.t4openerp.connector.transport
 
 
 /**
