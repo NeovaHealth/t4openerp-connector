@@ -45,7 +45,7 @@ stage, it was decided to try and de-couple the transport and allow easy implemen
 other transport strategies when needed.
 
 #### Domains
----
+
 With the use of the Domain trait, in conjunction with the implicits defined in Domain's
 companion object, a DSL for easily and clearly specifying complex domains is provided
 
