@@ -32,6 +32,7 @@ package object connector{
       case x: Numeric[_] => TransportNumber(x)
       case x: String  => TransportString(x)
       case x: Boolean => TransportBoolean(x)
+      case x: Map[_,_]  => TransportMapType(x.toList.map(s => (s._1.toString, write(s._2))))
       case List(x:(_, _),_*) => TransportMapType(obj.asInstanceOf[List[(_,_)]].map(y => y._1.toString -> write(y._2)))
       case x: List[_] => TransportArrayType(x.map(write))
       case x => TransportString(x.toString)
