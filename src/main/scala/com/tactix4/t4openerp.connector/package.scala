@@ -51,6 +51,7 @@ package object connector{
   implicit def IntToTransportNumber(i: Int) = new TransportNumber(i)
   implicit def FloatToTransportNumber(i: Float) = new TransportNumber(i)
   implicit def DoubleToTransportNumber(i: Double) = new TransportNumber(i)
+  implicit def MapOfStringsToTransportMap(m: Map[String,String]) = new TransportMap(m.toList.map((t: (String,Any)) => (t._1, t._2.toTransportDataType)))
   implicit def ListOfIntsToTransportArray(l: List[Int]) : TransportArray = TransportArrayType(l.map(x => TransportNumber(x)))
   implicit def ListOfStringsToTransportArray[T <: TransportDataType](l: List[String]) : TransportArray = TransportArrayType(l.map(TransportString))
 }
