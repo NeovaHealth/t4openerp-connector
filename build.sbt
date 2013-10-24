@@ -20,9 +20,7 @@ libraryDependencies += "com.tactix4" %% "t4xmlrpc" % "1.0-SNAPSHOT"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.10.1" % "test"
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test"
-
-libraryDependencies += "org.scalamock" %% "scalamock-scalatest-support" % "3.0.1" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest" % "2.0.RC1" % "test"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.0.9" % "test"
 
