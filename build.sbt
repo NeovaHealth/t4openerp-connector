@@ -1,6 +1,8 @@
-name := "openERPConnector"
+name := "OpenERPConnector"
 
-version := "1.0"
+organization := "com.tactix4"
+
+version := "1.0-SNAPSHOT"
 
 scalaVersion := "2.10.1"
 
@@ -14,7 +16,7 @@ resolvers += "Local SBT Repository" at Path.userHome.asFile.toURI.toURL+".ivy2/l
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.2"
 
-libraryDependencies += "com.tactix4" %% "xmlrpc" % "1.0"
+libraryDependencies += "com.tactix4" %% "xmlrpc" % "1.0-SNAPSHOT"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.10.1" % "test"
 
