@@ -51,7 +51,8 @@ object XmlRpcTransportAdaptor extends OpenERPTransportAdaptor with Logging{
 
      def read(obj: TransportDataType): XmlRpcDataValue = obj match {
        case TransportNumber(x:Int) => XmlRpcInt(x)
-       case TransportNumber(x) => XmlRpcDouble(x.asInstanceOf[Double])
+       case TransportNumber(x:Double) => XmlRpcDouble(x)
+       case TransportNumber(x:Float) => XmlRpcDouble(x.toDouble)
        case TransportString(x) => XmlRpcString(x)
        case TransportBoolean(x) => XmlRpcBoolean(x)
        case TransportArrayType(x) => XmlRpcArrayType(x.map(y => read(y)))
