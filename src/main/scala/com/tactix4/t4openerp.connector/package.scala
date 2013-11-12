@@ -20,6 +20,7 @@ package com.tactix4.t4openerp
 import scala.language.implicitConversions
 import com.tactix4.t4openerp.connector.transport._
 import scala.reflect.runtime.universe._
+import Numeric.Implicits._
 /**
  * @author max@tactix4.com
  *         14/07/2013
@@ -32,15 +33,13 @@ package object connector{
       case x: Numeric[_] => TransportNumber(x)
       case x: String  => TransportString(x)
       case x: Boolean => TransportBoolean(x)
-      case x: Map[_,_]  => TransportMapType(x.toList.map(s => (s._1.toString, write(s._2))))
-      case List(x:(_, _),_*) => TransportMapType(obj.asInstanceOf[List[(_,_)]].map(y => y._1.toString -> write(y._2)))
-      case x: List[_] => TransportArrayType(x.map(write))
+      case x: Map[_,_]  => TransportMap(x.toList.map(s => (s._1.toString, write(s._2))))
+      case List(x:(_, _),_*) => TransportMap(obj.asInstanceOf[List[(_,_)]].map(y => y._1.toString -> write(y._2)))
+      case x: List[_] => TransportArray(x.map(write))
       case x => TransportString(x.toString)
     }
   }
 
-  type TransportArray = TransportArrayType[TransportDataType]
-  type TransportMap = TransportMapType[TransportDataType]
   type TransportResponse = Either[String,TransportDataType]
 
   type ResultType = List[List[(String, Any)]]
@@ -53,6 +52,6 @@ package object connector{
   implicit def FloatToTransportNumber(i: Float) = new TransportNumber(i)
   implicit def DoubleToTransportNumber(i: Double) = new TransportNumber(i)
   implicit def MapOfStringsToTransportMap(m: Map[String,String]) = new TransportMap(m.toList.map((t: (String,Any)) => (t._1, t._2.toTransportDataType)))
-  implicit def ListOfIntsToTransportArray(l: List[Int]) : TransportArray = TransportArrayType(l.map(x => TransportNumber(x)))
-  implicit def ListOfStringsToTransportArray[T <: TransportDataType](l: List[String]) : TransportArray = TransportArrayType(l.map(TransportString))
+  implicit def ListOfIntsToTransportArray(l: List[Int]) : TransportArray = TransportArray(l.map(x => TransportNumber(x)))
+  implicit def ListOfStringsToTransportArray[T <: TransportDataType](l: List[String]) : TransportArray = TransportArray(l.map(TransportString))
 }

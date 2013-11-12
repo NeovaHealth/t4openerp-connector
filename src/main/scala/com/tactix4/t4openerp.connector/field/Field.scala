@@ -17,8 +17,8 @@
 
 package com.tactix4.t4openerp.connector.field
 
-import com.tactix4.t4openerp.connector._
 import scala.language.implicitConversions
+import com.tactix4.t4openerp.connector.transport.TransportMap
 
 /**
  * represents an OpenERP field

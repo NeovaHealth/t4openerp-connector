@@ -40,12 +40,12 @@ object XmlRpcTransportAdaptor extends OpenERPTransportAdaptor with Logging{
 
      def write(obj: XmlRpcDataValue): TransportDataType = obj match{
        case x: XmlRpcInt     => TransportNumber(x.value)
-       case x: XmlRpcDouble  => TransportNumber(x.value.toDouble)
+       case x: XmlRpcDouble  => TransportNumber(x.value)
        case x: XmlRpcString  => TransportString(x.value)
        case x: XmlRpcBoolean => TransportBoolean(x.value)
        case x: XmlRpcBase64  => TransportString(x.value.toString)
-       case x: XmlRpcArray   => TransportArrayType(x.value.map(write))
-       case x: XmlRpcStruct  => TransportMapType(x.value.map(x => x._1 -> x._2.toTransportDataType))
+       case x: XmlRpcArray   => TransportArray(x.value.map(write))
+       case x: XmlRpcStruct  => TransportMap(x.value.map(x => x._1 -> x._2.toTransportDataType))
        case x: XmlRpcDateTime => TransportString(x.value.toString)
      }
 
@@ -55,8 +55,8 @@ object XmlRpcTransportAdaptor extends OpenERPTransportAdaptor with Logging{
        case TransportNumber(x:Float) => XmlRpcDouble(x.toDouble)
        case TransportString(x) => XmlRpcString(x)
        case TransportBoolean(x) => XmlRpcBoolean(x)
-       case TransportArrayType(x) => XmlRpcArrayType(x.map(y => read(y)))
-       case TransportMapType(x) => XmlRpcStructType(x.map(t => t._1 -> read(t._2)))
+       case TransportArray(x) => XmlRpcArrayType(x.map(y => read(y)))
+       case TransportMap(x) => XmlRpcStructType(x.map(t => t._1 -> read(t._2)))
        case TransportNull => XmlRpcBoolean(value = false)
      }
    }

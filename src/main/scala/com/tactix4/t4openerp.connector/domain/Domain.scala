@@ -236,10 +236,10 @@ object Domain {
         tree match {
           case e: AND => "&" :: loop(e.left) ++ loop(e.right)
           case e: OR => "|" :: loop(e.left) ++ loop(e.right)
-          case e: NOT => "!" :: TransportArrayType(List(TransportString(e.value.fieldName), TransportString(e.value.operator), e.value.value)) :: Nil
-          case e: DomainTuple => TransportArrayType(List(TransportString(e.fieldName), TransportString(e.operator), e.value)) :: Nil
+          case e: NOT => "!" :: TransportArray(List(TransportString(e.value.fieldName), TransportString(e.value.operator), e.value.value)) :: Nil
+          case e: DomainTuple => TransportArray(List(TransportString(e.fieldName), TransportString(e.operator), e.value)) :: Nil
         }
-      TransportArrayType(loop(obj))
+      TransportArray(loop(obj))
     }
      def read(obj: TransportDataType) = ??? //not needed
    }

@@ -90,25 +90,22 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
 
     val promise = Promise[List[Field]]()
 
-    transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "fields_get", TransportArrayType[TransportDataType](Nil), context.toTransportDataType).onComplete {
-      case Success(s) =>
-        s.fold(
-          (error: String) => {
-            logger.error(error); promise.failure(new OpenERPException(error))
-          },
-          (result: TransportDataType) => result match {
+    transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "fields_get", TransportArray(Nil), context.toTransportDataType).onComplete(
+      _ match {
+        case Success(s) =>
+          s.fold(
+          (error: String) => { logger.error(error); promise.failure(new OpenERPException(error)) },
+          (result: TransportDataType) => result  match {
             case t: TransportMap => {
-              val theFields = t.value.collect {
-                case (x, y: TransportMap) => new Field(x.value, y)
-              }
-              if (theFields.size != t.value.size) throw unexpected(t.toString)
-              else promise.success(theFields.toList)
+                val theFields = t.value.collect { case (x, y: TransportMap) => new Field(x.value, y) }
+                if(theFields.size != t.value.size) throw unexpected(t.toString)
+                else promise.success(theFields.toList)
             }
             case x => promise.failure(unexpected(x.toString))
           }
         )
       case Failure(f) => promise.failure(f)
-    }
+      })
 
     promise.future
   }
@@ -122,25 +119,23 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     val promise = Promise[Boolean]()
       config.path = RPCService.RPC_OBJECT
       val answer = transportAdaptor.sendRequest(config,"execute",database, uid, password, "res.users", "context_get")
-      answer.onComplete {
-        case Success(x) => x.fold(
-          (error: String) => {
-            logger.error("Recieved a fault from openerp server: " + error); promise.failure(new OpenERPException(error))
-          },
-          {
-            case TransportMapType(m) => {
-              m.find(t => t._1 == "lang").map(v => context.setLanguage(v._2.toString))
-              m.find(t => t._1 == "tz").map(v => context.setTimeZone(v._2.toString))
-              promise.complete(Try(true))
-            }
-            case unexpected => promise.failure(new OpenERPException("unexpected response type: " + unexpected))
-          })
+      answer.onComplete((value: Try[TransportResponse]) => {
+        value match {
+          case Success(x) => x.fold(
+            (error: String) => {logger.error("Recieved a fault from openerp server: " + error); promise.failure(new OpenERPException(error))},
+            (result: TransportDataType) => result  match {
+              case TransportMap(m) => {
+                m.find(t => t._1 == "lang").map(v =>  context.setLanguage(v._2.toString))
+                m.find(t => t._1 == "tz").map(v => context.setTimeZone(v._2.toString))
+                promise.complete(Try(true))
+              }
+              case unexpected => promise.failure(new OpenERPException("unexpected response type: " + unexpected))
+            })
 
-        case Failure(f) => {
-          logger.error("Failed to get context from openERP server\n" + f.getMessage); promise.failure(f)
+          case Failure(f) => {logger.error("Failed to get context from openERP server\n" + f.getMessage); promise.failure(f)}
+
         }
-
-      }
+      } )
     promise.future
   }
 
@@ -186,20 +181,21 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
       obsIds <-  transportAdaptor.sendRequest(config,"execute", database, uid, password, model, "search", domain.map(_.toTransportDataType).getOrElse(""), offset, limit,order,context.toTransportDataType)
     } yield obsIds
 
-    result.onComplete {
+    result.onComplete((value: Try[TransportResponse]) => value match {
       case Success(s) => s.fold(
-      (error: String) => promise.failure(new OpenERPException(error)), {
-        case TransportArrayType(a) => promise.complete(Try(a.map {
-          case TransportNumber(y: Int) => y
-          case x => throw unexpected(x.toString)
-        }))
-        case fail => promise.failure(unexpected(fail.toString))
-      }
-      )
+        (error: String) => promise.failure(new OpenERPException(error)),
+        (result: TransportDataType) => result match {
+            case TransportArray(a) => promise.complete(Try(a.map(_ match {
+              case TransportNumber(y:Int) => y
+              case x => throw unexpected(x.toString)
+            })))
+            case fail => promise.failure(unexpected(fail.toString))
+          }
+        )
 
       case Failure(f) => promise.failure(f)
 
-    }
+    })
 
     promise.future
   }
@@ -220,21 +216,21 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
       values <-  transportAdaptor.sendRequest(config, "execute",database,uid,password,model,"read", ids, fieldNames,context.toTransportDataType)
     } yield values
 
-    result.onComplete {
+    result.onComplete((value: Try[TransportResponse]) => value match{
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
         (result: TransportDataType) => result match {
-            case TransportArrayType(x) => promise.complete(Try(x.map {
-              case y: TransportMapType[_] => y.value
+            case TransportArray(x) => promise.complete(Try(x.map(_ match{
+              case y:TransportMap => y.value
               case fail => throw unexpected(fail.toString)
-            }))
+            })))
             case fail => promise.failure(unexpected(fail.toString))
 
-        }
-      )
+          }
+        )
 
       case Failure(f) => promise.failure(f)
-    }
+    })
 
     promise.future
   }
@@ -260,10 +256,10 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
       obsValues <- read(model,obsIds, fields)
     } yield obsValues
 
-    result.onComplete {
+    result.onComplete((value: Try[ResultType]) => value match {
       case Success(s) => promise.complete(Try(s))
       case Failure(f) => promise.failure(f)
-    }
+    } )
 
     promise.future
   }
@@ -281,18 +277,18 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     config.path = RPCService.RPC_OBJECT
 
     val promise = Promise[Int]()
-    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "create",TransportMapType(fields.map(x=>x._1 -> x._2.toTransportDataType)), context.toTransportDataType)
+    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "create",TransportMap(fields.map(x=>x._1 -> x._2.toTransportDataType)), context.toTransportDataType)
 
-    result.onComplete {
+    result.onComplete((value: Try[TransportResponse]) => value match{
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
-        (result: TransportDataType) => result match {
-          case TransportNumber(i: Int) => promise.complete(Try(i))
-          case fail => promise.failure(unexpected(fail.toString))
-        }
-      )
+        (result: TransportDataType) => result  match {
+            case TransportNumber(i:Int) => promise.complete(Try(i))
+            case fail => promise.failure(unexpected(fail.toString))
+          }
+        )
       case Failure(f) => promise.failure(f)
-    }
+    })
 
     promise.future
   }
@@ -319,21 +315,19 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
 
     val result = for {
       f <- processedFields
-      r <- transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "write", ids,TransportMapType(f), context.toTransportDataType)
+      r <- transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "write", ids,TransportMap(f), context.toTransportDataType)
 
     } yield r
 
-    result.onComplete {
+    result.onComplete((value: Try[TransportResponse]) => value match {
       case Success(s) => s.fold(
-        (error: String) => {
-          logger.error(error); promise.failure(new OpenERPException(error))
-        },
-        (result: TransportDataType) => result match {
+        (error: String) => { logger.error(error); promise.failure(new OpenERPException(error))},
+        (result: TransportDataType) => result  match{
           case TransportBoolean(b) => promise.complete(Try(b))
           case fail => promise.failure(unexpected(result.toString))
         })
       case Failure(f) => promise.failure(f)
-    }
+    })
 
     promise.future
   }
@@ -348,20 +342,20 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
   private[OpenERPSession] def validateParams(model: String, fields: List[(String, TransportDataType)]) = {
      Future.sequence(
       fields.map( field => getFieldType(model,field._1).map(_.map(
-            {
+            _ match{
               //we're simplifying the write method for many2many and simply providing the 'replace' option
               case "many2many" => {
                 /*
                  * valid args are an array of ints
                  */
                 val validM2MArgs : PartialFunction[TransportDataType,Boolean] = {
-                  case x: TransportArray => x.value.forall {
-                    case TransportNumber(_: Int) => true
+                  case x: TransportArray => x.value.forall(_ match {
+                    case TransportNumber(_:Int) => true
                     case _ => false
-                  }
+                  })
                 }
                 if(validM2MArgs.isDefinedAt(field._2)){
-                  field._1 -> TransportArrayType(List(TransportArrayType(List(TransportNumber(6),TransportNumber(0),field._2))))
+                  field._1 -> TransportArray(List(TransportArray(List(TransportNumber(6),TransportNumber(0),field._2))))
                 }
                 else {
                   throw unexpected("Invalid arguments to write to a many2many field. Expected a lit of Ints, recieved: " + field._2)
@@ -401,10 +395,8 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     val promise = Promise[Boolean]()
     val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "unlink", ids, context.toTransportDataType)
 
-    result.onComplete(
-    {
-      case Success(s) => s.fold(
-        (error: String)             => {logger.error(error); promise.failure(new OpenERPException(error))},
+    result.onComplete((value: Try[TransportResponse]) => value match {
+      case Success(s) => s.fold((error: String) => {logger.error(error); promise.failure(new OpenERPException(error))},
         (result: TransportDataType) => result  match {
             case TransportBoolean(b) => promise.complete(Try(b))
             case fail => promise.failure(unexpected(result.toString))
@@ -428,13 +420,11 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     val promise = Promise[Any]()
     val result = transportAdaptor.sendRequest(config, "execute", TransportString(database) :: TransportNumber(uid) :: TransportString(password) :: TransportString(model) :: TransportString(methodName) :: params.toList.map(_.toTransportDataType) ++ (context.toTransportDataType :: Nil))
 
-    result.onComplete {
-      case Success(s) => s.fold((error: String) => {
-        logger.error(error); promise.failure(new OpenERPException(error))
-      },
+    result.onComplete((value: Try[TransportResponse]) => value match {
+      case Success(s) => s.fold((error: String) => {logger.error(error); promise.failure(new OpenERPException(error))},
         r => promise.success(r.value))
       case Failure(f) => promise.failure(f)
-    }
+    })
 
     promise.future
 
