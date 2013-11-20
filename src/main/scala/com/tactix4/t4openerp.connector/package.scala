@@ -30,7 +30,9 @@ package object connector{
   implicit object AnyToTransportDataType extends TransportDataConverter[Any] {
     def read(obj: TransportDataType): Any = obj.value
     def write(obj: Any): TransportDataType = obj match {
-      case x: Numeric[_] => TransportNumber(x)
+      case x: Int => TransportNumber(x)
+      case x: Double => TransportNumber(x)
+      case x: Float => TransportNumber(x)
       case x: String  => TransportString(x)
       case x: Boolean => TransportBoolean(x)
       case x: Map[_,_]  => TransportMap(x.toList.map(s => (s._1.toString, write(s._2))))
