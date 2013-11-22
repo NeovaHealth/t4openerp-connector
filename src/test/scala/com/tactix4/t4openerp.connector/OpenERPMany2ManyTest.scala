@@ -103,19 +103,7 @@ class OpenERPMany2ManyTest extends FunSuite with Futures {
       case Failure(f) => fail(f)
     })
 
-    Await.result(result, 2 seconds)
-  }
-
-  test("Test write"){
-     val result = for {
-      s <- session
-      ids <- s.write("wardware.patient",List(129), List("bed_id" -> 64))
-    } yield ids
-      Await.result(result, 2 seconds)
-    result.onComplete({
-      case Success(s) => println("SUCCESS: " + s)
-      case Failure(f) => println("FAILURE: " + f.getMessage)
-    })
+    Await.result(result, 5 seconds)
   }
 
   test("Fail on Update category_id with invalid value") {
