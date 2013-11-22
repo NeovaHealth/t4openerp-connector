@@ -7,11 +7,11 @@ version := "1.0-SNAPSHOT"
 scalaVersion := "2.10.2"
 
 resolvers ++= Seq(
+  "Tactix4 Artifactory" at "http://10.10.160.30/artifactory/ext-release-local",
   "Sonatype Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-  "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
+  "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases",
+ "Local SBT Repository" at Path.userHome.asFile.toURI.toURL+".ivy2/local"
 )
-
-resolvers += "Local SBT Repository" at Path.userHome.asFile.toURI.toURL+".ivy2/local"
 
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.2"
