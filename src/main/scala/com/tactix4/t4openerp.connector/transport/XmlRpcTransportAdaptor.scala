@@ -53,6 +53,7 @@ object XmlRpcTransportAdaptor extends OpenERPTransportAdaptor with Logging{
        case TransportNumber(x:Int) => XmlRpcInt(x)
        case TransportNumber(x:Double) => XmlRpcDouble(x)
        case TransportNumber(x:Float) => XmlRpcDouble(x.toDouble)
+       case TransportNumber(x) => XmlRpcDouble(x.asInstanceOf[Double])
        case TransportString(x) => XmlRpcString(x)
        case TransportBoolean(x) => XmlRpcBoolean(x)
        case TransportArray(x) => XmlRpcArrayType(x.map(y => read(y)))
