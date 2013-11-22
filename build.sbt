@@ -9,8 +9,7 @@ scalaVersion := "2.10.2"
 resolvers ++= Seq(
   "Tactix4 Artifactory" at "http://10.10.160.30/artifactory/ext-release-local",
   "Sonatype Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-  "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases",
- "Local SBT Repository" at Path.userHome.asFile.toURI.toURL+".ivy2/local"
+  "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
 )
 
 
@@ -27,8 +26,6 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.0.9" % "test"
 libraryDependencies += "com.typesafe" %% "scalalogging-slf4j" % "1.0.1"
 
 libraryDependencies += "com.typesafe" % "config" % "1.0.2"
-
-publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
 
 osgiSettings
 
