@@ -2,7 +2,7 @@ name := "t4openerp-connector"
 
 organization:= "com.tactix4"
 
-version := "1.0-SNAPSHOT"
+version := "1.0"
 
 scalaVersion := "2.10.2"
 
@@ -15,7 +15,7 @@ resolvers ++= Seq(
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.2"
 
-libraryDependencies += "com.tactix4" %% "t4xmlrpc" % "1.0-SNAPSHOT"
+libraryDependencies += "com.tactix4" %% "t4xmlrpc" % "1.0"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.10.1" % "test"
 
