@@ -7,7 +7,7 @@ version := "1.1-SNAPSHOT"
 scalaVersion := "2.10.2"
 
 resolvers ++= Seq(
-  "Tactix4 Artifactory" at "http://10.10.160.30:8081/artifactory/ext-release-local",
+  "Tactix4 Artifactory" at "http://10.10.160.30:8081/artifactory/libs-release-local",
   "Sonatype Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
   "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
 )
