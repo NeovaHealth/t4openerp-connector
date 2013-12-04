@@ -183,25 +183,26 @@ class OpenERPConnectorTest extends FunSuite with Futures {
     Await.result(result, 2 seconds)
   }
   test("call arbitrary method on openerp host") {
+    import com.tactix4.t4openerp.connector.ListToTDT
     val result = for {
       s <- session
-      x <- s.callMethod("res.partner", "read", List(1,2,3), List("email"))
+      x <- s.callMethod("res.partner", "read", List(1,2,3))
     } yield x
 
-    result.onComplete(_ match {
+    result.onComplete {
       case Success(s) => println(s)
       case Failure(f) => fail(f)
-    })
+    }
 
     Await.result(result, 2 seconds)
   }
 
   test("fail login to openerp host - bad password") {
     val session = proxy.startSession(username, password + "FAIL", database)
-    session.onComplete((value: Try[OpenERPSession]) => value match{
+    session.onComplete {
       case Failure(f) => fail(f)
       case Success(s) => println("logged in with uid: " + s.uid)
-    })
+    }
     intercept[OpenERPAuthenticationException]{
       Await.result(session, 1 second)
     }
@@ -210,10 +211,10 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
   test("fail login to openerp host - bad username") {
     val session = proxy.startSession(username+"092j3f09jfsd", password, database)
-    session.onComplete((value: Try[OpenERPSession]) => value match{
+    session.onComplete {
       case Failure(f) => fail(f)
       case Success(s) => println("logged in with uid: " + s.uid)
-    })
+    }
     intercept[OpenERPAuthenticationException]{
       Await.result(session, 1 second)
     }
@@ -222,10 +223,10 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
   test("fail login to openerp host - invalid db") {
     val session = proxy.startSession(username, password, database+"FAIL")
-    session.onComplete((value: Try[OpenERPSession]) => value match{
+    session.onComplete {
       case Failure(f) => fail(f)
       case Success(s) => println("logged in with uid: " + s.uid)
-    })
+    }
     intercept[OpenERPException]{
       Await.result(session, 1 second)
     }

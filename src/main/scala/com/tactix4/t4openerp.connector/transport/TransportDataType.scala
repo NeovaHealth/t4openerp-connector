@@ -48,8 +48,8 @@ case class TransportString(value: String) extends TransportDataType{
 case class TransportArray(value: List[TransportDataType]) extends TransportDataType{
   type T = List[TransportDataType]
 }
-case class TransportMap(value: List[(String, TransportDataType)]) extends TransportDataType{
-  type T = List[(String, TransportDataType)]
+case class TransportMap(value: Map[String, TransportDataType]) extends TransportDataType{
+  type T = Map[String, TransportDataType]
 }
 object TransportNull extends TransportDataType{
   type T = Null

@@ -30,7 +30,7 @@ import scala.language.implicitConversions
  *         24/08/2013
  */
 @implicitNotFound(msg = "Can not find TransportDataConverter for type ${T}")
-trait TransportDataConverter[T] {
+trait TransportDataConverter[+T] {
   def read(obj: TransportDataType): T
   def write(obj: T): TransportDataType
 }

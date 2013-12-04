@@ -234,9 +234,9 @@ object Domain {
     def write(obj: Domain): TransportDataType = {
       def loop(tree: Domain): List[TransportDataType] =
         tree match {
-          case e: AND => "&" :: loop(e.left) ++ loop(e.right)
-          case e: OR => "|" :: loop(e.left) ++ loop(e.right)
-          case e: NOT => "!" :: TransportArray(List(TransportString(e.value.fieldName), TransportString(e.value.operator), e.value.value)) :: Nil
+          case e: AND => TransportString("&") :: loop(e.left) ++ loop(e.right)
+          case e: OR => TransportString("|") :: loop(e.left) ++ loop(e.right)
+          case e: NOT => TransportString("!") :: TransportArray(List(TransportString(e.value.fieldName), TransportString(e.value.operator), e.value.value)) :: Nil
           case e: DomainTuple => TransportArray(List(TransportString(e.fieldName), TransportString(e.operator), e.value)) :: Nil
         }
       TransportArray(loop(obj))

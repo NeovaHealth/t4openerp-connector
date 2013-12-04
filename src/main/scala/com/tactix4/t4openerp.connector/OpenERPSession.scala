@@ -27,6 +27,8 @@ import com.tactix4.t4openerp.connector.domain.Domain
 import transport._
 import com.tactix4.t4openerp.connector.exception.OpenERPException
 import com.tactix4.t4openerp.connector.field.Field
+import java.util.Date
+
 /**
  * An OpenERPSession represents a current session to an OpenERP server.
  *
@@ -118,7 +120,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    def getContextFromServer : Future[Boolean] = {
     val promise = Promise[Boolean]()
       config.path = RPCService.RPC_OBJECT
-      val answer = transportAdaptor.sendRequest(config,"execute",database, uid, password, "res.users", "context_get")
+      val answer = transportAdaptor.sendRequest(config,"execute",TransportString(database), TransportNumber(uid), TransportString(password), TransportString("res.users"), TransportString("context_get"))
       answer.onComplete((value: Try[TransportResponse]) => {
         value match {
           case Success(x) => x.fold(
@@ -160,7 +162,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return a [[scala.concurrent.Future]] containing an [[scala.Option]] of a [[java.lang.String]] representing the type of the field
    */
   def getFieldType(model: String, fieldName: String): Future[Option[String]] = {
-    getField(model, fieldName).map(_.flatMap(_.parameters.value.find(_._1 == "type").map( _._2.toString)))
+    getField(model, fieldName).map(_.flatMap(_.get("type")))
   }
 
   /**
@@ -181,11 +183,11 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
       obsIds <-  transportAdaptor.sendRequest(config,"execute", database, uid, password, model, "search", domain.map(_.toTransportDataType).getOrElse(""), offset, limit,order,context.toTransportDataType)
     } yield obsIds
 
-    result.onComplete((value: Try[TransportResponse]) => value match {
+    result.onComplete({
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
         (result: TransportDataType) => result match {
-            case TransportArray(a) => promise.complete(Try(a.map(_ match {
+            case TransportArray(a) => promise.complete(Try(a.map( {
               case TransportNumber(y:Int) => y
               case x => throw unexpected(x.toString)
             })))
@@ -213,14 +215,14 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     config.path = RPCService.RPC_OBJECT
     val promise = Promise[ResultType]()
     val result = for{
-      values <-  transportAdaptor.sendRequest(config, "execute",database,uid,password,model,"read", ids, fieldNames,context.toTransportDataType)
+      values <-  transportAdaptor.sendRequest(config, "execute",database,uid,password,model,"read", ids.toTransportDataType, fieldNames.toTransportDataType,context.toTransportDataType)
     } yield values
 
     result.onComplete((value: Try[TransportResponse]) => value match{
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
         (result: TransportDataType) => result match {
-            case TransportArray(x) => promise.complete(Try(x.map(_ match{
+            case TransportArray(x) => promise.complete(Try(x.map({
               case y:TransportMap => y.value
               case fail => throw unexpected(fail.toString)
             })))
@@ -256,7 +258,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
       obsValues <- read(model,obsIds, fields)
     } yield obsValues
 
-    result.onComplete((value: Try[ResultType]) => value match {
+    result.onComplete({
       case Success(s) => promise.complete(Try(s))
       case Failure(f) => promise.failure(f)
     } )
@@ -271,13 +273,13 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return a Future containing the id of the new record
    * @throws OpenERPException if the creation fails
    */
-  def create(model: String, fields: List[(String, Any)]) : Future[Int] = {
+  def create(model: String, fields: Map[String, Any]) : Future[Int] = {
      logger.info("executing create with fields: " + fields)
 
     config.path = RPCService.RPC_OBJECT
 
     val promise = Promise[Int]()
-    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "create",TransportMap(fields.map(x=>x._1 -> x._2.toTransportDataType)), context.toTransportDataType)
+    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "create",fields.toTransportDataType, context.toTransportDataType)
 
     result.onComplete((value: Try[TransportResponse]) => value match{
       case Success(s) => s.fold(
@@ -306,8 +308,18 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return a Future[True]
    * @throws OpenERPException if the write fails
    */
-  def write(model: String, ids: List[Int], fields: List[(String, Any)]) : Future[Boolean] = {
-    val processedFields: Future[List[(String, TransportDataType)]] = validateParams(model, fields.map(x=>x._1 -> x._2.toTransportDataType))
+  def write(model: String, ids: List[Int], fields: Map[String, Any]) : Future[Boolean] = {
+    val processedFields: Future[Map[String, TransportDataType]] = validateParams(model, fields.mapValues(v => v match{
+      case v:Int => v
+      case v:Double => v
+      case v:Float => v
+      case v:Long => v
+      case s:String => s
+      case l:List[_] => l.toTransportDataType
+      case m:Map => m.toTransportDataType
+      case x:Any => x.toString.toTransportDataType
+    }
+      ).toMap)
 
     config.path = RPCService.RPC_OBJECT
 
@@ -315,11 +327,11 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
 
     val result = for {
       f <- processedFields
-      r <- transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "write", ids,TransportMap(f), context.toTransportDataType)
+      r <- transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "write", ids.toTransportDataType,f.toTransportDataType, context.toTransportDataType)
 
     } yield r
 
-    result.onComplete((value: Try[TransportResponse]) => value match {
+    result.onComplete({
       case Success(s) => s.fold(
         (error: String) => { logger.error(error); promise.failure(new OpenERPException(error))},
         (result: TransportDataType) => result  match{
@@ -339,8 +351,10 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return the list of fieldName -> fieldValue tuples, formatted appropriately
    * @throws OpenERPException if the field values are invalid for the type of field
    */
-  private[OpenERPSession] def validateParams(model: String, fields: List[(String, TransportDataType)]) = {
-     Future.sequence(
+  private[OpenERPSession] def validateParams(model: String, fields: Map[String, Any]): Future[Map[String, TransportDataType]] = {
+
+
+      Future.sequence(
       fields.map( field => getFieldType(model,field._1).map(_.map(
             _ match{
               //we're simplifying the write method for many2many and simply providing the 'replace' option
@@ -348,14 +362,14 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
                 /*
                  * valid args are an array of ints
                  */
-                val validM2MArgs : PartialFunction[TransportDataType,Boolean] = {
-                  case x: TransportArray => x.value.forall(_ match {
+                val validM2MArgs : PartialFunction[Any,Boolean] = {
+                  case x: TransportArray => x.value.forall( {
                     case TransportNumber(_:Int) => true
                     case _ => false
                   })
                 }
                 if(validM2MArgs.isDefinedAt(field._2)){
-                  field._1 -> TransportArray(List(TransportArray(List(TransportNumber(6),TransportNumber(0),field._2))))
+                  field._1 -> TransportArray(List(TransportArray(List(TransportNumber(6),TransportNumber(0),field._2.toTransportDataType))))
                 }
                 else {
                   throw unexpected("Invalid arguments to write to a many2many field. Expected a lit of Ints, recieved: " + field._2)
@@ -370,16 +384,18 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
                   case TransportNumber(_: Int) => true
                   case x: TransportBoolean if !x.value => true
                 }
-                if(validM2OArgs.isDefinedAt(field._2)) field
-                else  throw unexpected("Invalid arguments to write to a many2one field. Expected an Int or false, recieved: " + field._2)
+                if(validM2OArgs.isDefinedAt(field._2.toTransportDataType)) field._1 -> field._2.toTransportDataType
+
+                else  throw unexpected("Invalid arguments to write to a many2one field. Expected an Int or false, recieved: " + field._2.toTransportDataType)
 
               }
-              case _ => field
+              case _ => field._1 -> field._2.toTransportDataType
             }
           ).getOrElse(throw new OpenERPException("Field " + field +  " doesn't exist?"))
-        )
       )
-    )
+      )
+    ).map(_.toMap)
+
   }
 
   /**
@@ -393,7 +409,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     config.path = RPCService.RPC_OBJECT
 
     val promise = Promise[Boolean]()
-    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "unlink", ids, context.toTransportDataType)
+    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "unlink", ids.toTransportDataType, context.toTransportDataType)
 
     result.onComplete((value: Try[TransportResponse]) => value match {
       case Success(s) => s.fold((error: String) => {logger.error(error); promise.failure(new OpenERPException(error))},
@@ -413,18 +429,20 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @param methodName the method to call
    * @param params the parameters the method requires
    */
-  def callMethod(model: String, methodName: String, params: Any*)  : Future[Any] = {
+  def callMethod[T:TransportDataConverter](model: String, methodName: String, params: T*)  : Future[TransportDataType] = {
 
     config.path = RPCService.RPC_OBJECT
 
-    val promise = Promise[Any]()
-    val result = transportAdaptor.sendRequest(config, "execute", TransportString(database) :: TransportNumber(uid) :: TransportString(password) :: TransportString(model) :: TransportString(methodName) :: params.toList.map(_.toTransportDataType) ++ (context.toTransportDataType :: Nil))
+    val promise = Promise[TransportDataType]()
+    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, methodName, params.toList.toTransportDataType, context.toTransportDataType)
 
-    result.onComplete((value: Try[TransportResponse]) => value match {
-      case Success(s) => s.fold((error: String) => {logger.error(error); promise.failure(new OpenERPException(error))},
-        r => promise.success(r.value))
+    result.onComplete {
+      case Success(s) => s.fold((error: String) => {
+        logger.error(error); promise.failure(new OpenERPException(error))
+      },
+        r => promise.success(r))
       case Failure(f) => promise.failure(f)
-    })
+    }
 
     promise.future
 
