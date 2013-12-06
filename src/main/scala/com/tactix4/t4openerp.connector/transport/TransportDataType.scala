@@ -39,6 +39,7 @@ sealed trait TransportDataType{
 case class TransportNumber[N:Numeric](value: N) extends TransportDataType{
   type T = N
   def toDouble:Double = implicitly[Numeric[N]].toDouble(value)
+  def toInt:Int = implicitly[Numeric[N]].toInt(value)
 }
 case class TransportBoolean(value: Boolean) extends TransportDataType{
   type T = Boolean
