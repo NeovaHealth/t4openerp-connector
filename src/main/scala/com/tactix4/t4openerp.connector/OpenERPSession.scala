@@ -218,7 +218,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
       values <-  transportAdaptor.sendRequest(config, "execute",database,uid,password,model,"read", ids.toTransportDataType, fieldNames.toTransportDataType,context.toTransportDataType)
     } yield values
 
-    result.onComplete((value: Try[TransportResponse]) => value match{
+    result.onComplete({
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
         (result: TransportDataType) => result match {
@@ -273,7 +273,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return a Future containing the id of the new record
    * @throws OpenERPException if the creation fails
    */
-  def create[T:TransportDataConverter](model: String, fields: Map[String, T]) : Future[Int] = {
+  def create(model: String, fields: Map[String, Any]) : Future[Int] = {
      logger.info("executing create with fields: " + fields)
 
     config.path = RPCService.RPC_OBJECT
@@ -281,7 +281,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     val promise = Promise[Int]()
     val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "create",TransportMap(fields.mapValues(anyToTDT)), context.toTransportDataType)
 
-    result.onComplete((value: Try[TransportResponse]) => value match{
+    result.onComplete({
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
         (result: TransportDataType) => result  match {
@@ -308,8 +308,8 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return a Future[True]
    * @throws OpenERPException if the write fails
    */
-  def write[T:TransportDataConverter](model: String, ids: List[Int], fields: Map[String, T]) : Future[Boolean] = {
-    val processedFields: Future[Map[String, TransportDataType]] = validateParams(model,fields.mapValues(implicitly[TransportDataConverter[T]].write))
+  def write(model: String, ids: List[Int], fields: Map[String, Any]) : Future[Boolean] = {
+    val processedFields: Future[Map[String, TransportDataType]] = validateParams(model,fields.mapValues(anyToTDT))
 
     config.path = RPCService.RPC_OBJECT
 

@@ -45,19 +45,6 @@ package object connector{
     case x  => TransportString(x.toString)
   }
 
-  implicit object AnyValToTransportDataType extends TransportDataConverter[AnyVal] {
-    def read(obj: TransportDataType): AnyVal = ???
-    def write(obj: AnyVal): TransportDataType = obj match {
-      case x: Int => TransportNumber(x)
-      case x: Double => TransportNumber(x)
-      case x: Float => TransportNumber(x)
-      case x: Long => TransportNumber(x)
-      case x: Char  => TransportNumber(x)
-      case x: Short => TransportNumber(x)
-      case x: Boolean => TransportBoolean(x)
-      case x: Unit => TransportNull
-    }
-  }
 
   implicit object StringToTDT extends TransportDataConverter[String] {
     def read(obj: TransportDataType) = obj.toString
@@ -93,7 +80,4 @@ package object connector{
   implicit def IntToTransportNumber(i: Int) = new TransportNumber(i)
   implicit def FloatToTransportNumber(i: Float) = new TransportNumber(i)
   implicit def DoubleToTransportNumber(i: Double) = new TransportNumber(i)
-//  implicit def MapOfStringsToTransportMap(m: Map[String,String]) = new TransportMap(m.toList.map((t: (String,Any)) => (t._1, t._2.toTransportDataType)))
-//  implicit def ListOfIntsToTransportArray(l: List[Int]) : TransportArray = TransportArray(l.map(x => TransportNumber(x)))
-//  implicit def ListOfStringsToTransportArray[T <: TransportDataType](l: List[String]) : TransportArray = TransportArray(l.map(TransportString))
 }
