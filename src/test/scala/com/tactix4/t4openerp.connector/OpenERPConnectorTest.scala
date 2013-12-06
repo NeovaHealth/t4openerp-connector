@@ -26,6 +26,7 @@ import scala.concurrent.duration._
 import com.tactix4.t4openerp.connector.domain.Domain._
 import OpenERPSession._
 import com.tactix4.t4openerp.connector.exception.{OpenERPAuthenticationException, OpenERPException}
+import com.tactix4.t4openerp.connector.transport.TransportArray
 
 /**
  * Created by max@tactix4.com
@@ -123,7 +124,7 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
     val result = for {
       s <- session
-      r <- s.create("res.partner",List("name" -> "McLovin"))
+      r <- s.create("res.partner",Map("name" -> "McLovin"))
     } yield r
 
     result.onComplete((value: Try[Int]) => value match {
@@ -137,7 +138,7 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
     val result = for {
       s <- session
-      r <- s.create("res.partner",List("namsdf09je" -> "McLovin"))
+      r <- s.create("res.partner",Map("namsdf09je" -> "McLovin"))
     } yield r
 
     result.onComplete((value: Try[Int]) => value match {
@@ -155,14 +156,14 @@ class OpenERPConnectorTest extends FunSuite with Futures {
     val result = for {
       s <- session
       ids <- s.search("res.partner", "name" === "McLovin")
-      r <- s.write("res.partner",ids, List("name" -> "McLovinUpdated"))
+      r <- s.write("res.partner",ids, Map("name" -> "McLovinUpdated"))
     } yield { r}
 
     //OpenERP returns TRUE whether we updated anything or not - useful!
-    result.onComplete((value: Try[Boolean]) => value match {
+    result.onComplete {
       case Success(s) => println("partner updated. Or Not. Who can tell?")
       case Failure(f) => fail(f)
-    })
+    }
 
     Await.result(result, 3 seconds)
   }
@@ -176,17 +177,16 @@ class OpenERPConnectorTest extends FunSuite with Futures {
     } yield d
 
     //OpenERP returns TRUE whether we deleted anything or not - useful!
-    result.onComplete(_ match {
+    result.onComplete {
       case Success(s) => println("partner was deleted. Or not. I'm not sure.")
       case Failure(f) => fail(f)
-    })
+    }
     Await.result(result, 2 seconds)
   }
   test("call arbitrary method on openerp host") {
-    import com.tactix4.t4openerp.connector.ListToTDT
     val result = for {
       s <- session
-      x <- s.callMethod("res.partner", "read", List(1,2,3))
+      x <- s.callMethod("res.partner", "read", TransportArray(List(1,2,3)), TransportArray(List("name")))
     } yield x
 
     result.onComplete {

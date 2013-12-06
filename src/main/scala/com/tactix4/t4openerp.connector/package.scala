@@ -20,6 +20,8 @@ package com.tactix4.t4openerp
 import scala.language.implicitConversions
 import com.tactix4.t4openerp.connector.transport._
 import com.tactix4.t4openerp.connector.transport.PimpedAny
+import java.util.Date
+
 /**
  * @author max@tactix4.com
  *         14/07/2013
@@ -27,6 +29,21 @@ import com.tactix4.t4openerp.connector.transport.PimpedAny
 package object connector{
   implicit def pimpAny[T](any: T) = new PimpedAny(any)
 
+  def anyToTDT(t:Any):TransportDataType = t match{
+    case x: Int => TransportNumber(x)
+    case x: Double => TransportNumber(x)
+    case x: Float => TransportNumber(x)
+    case x: Long => TransportNumber(x)
+    case x: Char  => TransportNumber(x)
+    case x: Short => TransportNumber(x)
+    case x: Boolean => TransportBoolean(x)
+    case x: Unit => TransportNull
+    case x: String => TransportString(x)
+    case x: Map[_,_] => TransportMap(x.map(v => v._1.toString -> anyToTDT(v._2)))
+    case x: Set[_] => TransportArray(x.toList.map(anyToTDT))
+    case x: Seq[_] => TransportArray(x.toList.map(anyToTDT))
+    case x  => TransportString(x.toString)
+  }
 
   implicit object AnyValToTransportDataType extends TransportDataConverter[AnyVal] {
     def read(obj: TransportDataType): AnyVal = ???
@@ -48,25 +65,21 @@ package object connector{
 
   }
 
-  implicit object ListToTDT extends TransportDataConverter[List[_]] {
-    def read(obj:TransportDataType) = ???
-    def write(obj:List[_]) : TransportDataType = TransportArray(obj.map(_.toTransportDataType))
-  }
 
   implicit object ListIntToTDT extends TransportDataConverter[List[Int]] {
     def read(obj:TransportDataType) = ???
-    def write(obj:List[Int]) : TransportDataType = TransportArray(obj.map((_:AnyVal).toTransportDataType))
+    def write(obj:List[Int]) : TransportDataType = TransportArray(obj.map(TransportNumber(_)))
   }
 
   implicit object ListStringToTDT extends TransportDataConverter[List[String]] {
     def read(obj:TransportDataType) = ???
-    def write(obj:List[String]) : TransportDataType = TransportArray(obj.map(_.toTransportDataType))
+    def write(obj:List[String]) : TransportDataType = TransportArray(obj.map(TransportString))
 
   }
 
-  implicit object MapStringAnyToTDT extends TransportDataConverter[Map[String,Any]] {
+  implicit object MapStringTransportToTDT extends TransportDataConverter[Map[String,TransportDataType]] {
     def read(obj:TransportDataType) = ???
-    def write(obj:Map[String,Any]) : TransportDataType = TransportMap(obj.mapValues(_.toTransportDataType))
+    def write(obj:Map[String,TransportDataType]) : TransportDataType = TransportMap(obj)
   }
 
 

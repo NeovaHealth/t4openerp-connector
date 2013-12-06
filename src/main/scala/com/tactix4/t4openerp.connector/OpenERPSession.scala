@@ -273,13 +273,13 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return a Future containing the id of the new record
    * @throws OpenERPException if the creation fails
    */
-  def create(model: String, fields: Map[String, Any]) : Future[Int] = {
+  def create[T:TransportDataConverter](model: String, fields: Map[String, T]) : Future[Int] = {
      logger.info("executing create with fields: " + fields)
 
     config.path = RPCService.RPC_OBJECT
 
     val promise = Promise[Int]()
-    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "create",fields.toTransportDataType, context.toTransportDataType)
+    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "create",TransportMap(fields.mapValues(anyToTDT)), context.toTransportDataType)
 
     result.onComplete((value: Try[TransportResponse]) => value match{
       case Success(s) => s.fold(
@@ -308,18 +308,8 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return a Future[True]
    * @throws OpenERPException if the write fails
    */
-  def write(model: String, ids: List[Int], fields: Map[String, Any]) : Future[Boolean] = {
-    val processedFields: Future[Map[String, TransportDataType]] = validateParams(model, fields.mapValues(v => v match{
-      case v:Int => v
-      case v:Double => v
-      case v:Float => v
-      case v:Long => v
-      case s:String => s
-      case l:List[_] => l.toTransportDataType
-      case m:Map => m.toTransportDataType
-      case x:Any => x.toString.toTransportDataType
-    }
-      ).toMap)
+  def write[T:TransportDataConverter](model: String, ids: List[Int], fields: Map[String, T]) : Future[Boolean] = {
+    val processedFields: Future[Map[String, TransportDataType]] = validateParams(model,fields.mapValues(implicitly[TransportDataConverter[T]].write))
 
     config.path = RPCService.RPC_OBJECT
 
@@ -351,49 +341,40 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return the list of fieldName -> fieldValue tuples, formatted appropriately
    * @throws OpenERPException if the field values are invalid for the type of field
    */
-  private[OpenERPSession] def validateParams(model: String, fields: Map[String, Any]): Future[Map[String, TransportDataType]] = {
+  private[OpenERPSession] def validateParams(model: String, fields: Map[String, TransportDataType]): Future[Map[String, TransportDataType]] = {
 
 
       Future.sequence(
-      fields.map( field => getFieldType(model,field._1).map(_.map(
-            _ match{
+
+      fields.map{ case (fieldName:String, fieldValue:TransportDataType) => getFieldType(model,fieldName).map(_.map({
               //we're simplifying the write method for many2many and simply providing the 'replace' option
               case "many2many" => {
-                /*
-                 * valid args are an array of ints
-                 */
-                val validM2MArgs : PartialFunction[Any,Boolean] = {
-                  case x: TransportArray => x.value.forall( {
-                    case TransportNumber(_:Int) => true
-                    case _ => false
-                  })
-                }
-                if(validM2MArgs.isDefinedAt(field._2)){
-                  field._1 -> TransportArray(List(TransportArray(List(TransportNumber(6),TransportNumber(0),field._2.toTransportDataType))))
-                }
-                else {
-                  throw unexpected("Invalid arguments to write to a many2many field. Expected a lit of Ints, recieved: " + field._2)
+                /*  valid args are an array of ints */
+                fieldValue match{
+                  case x:TransportArray
+                    if x.value.forall({
+                      case TransportNumber(_: Int) => true
+                      case _ => false
+                    })
+                      => fieldName -> TransportArray(List(TransportArray(List(6,0,x))))
+                  case _ => throw unexpected("Invalid arguments to write to a many2many field. Expected a lit of Ints, received: " + fieldValue)
                 }
               }
               //case "one2many" => // not sure about the best way to do this as there isn't an equivelent to the many2many option
               case "many2one" => {
-                /*
-                 * valid args are an int or false
-                 */
-                val validM2OArgs : PartialFunction[TransportDataType, Boolean] = {
-                  case TransportNumber(_: Int) => true
-                  case x: TransportBoolean if !x.value => true
+                /* * valid args are an int or false */
+                fieldValue match{
+                  case TransportNumber(x:Int) => fieldName -> TransportNumber(x)
+                  case x:TransportBoolean if !x.value => fieldName -> x
+                  case _ => throw unexpected("Invalid arguments to write to a many2one field. Expected an Int or false, recieved: " + fieldValue)
                 }
-                if(validM2OArgs.isDefinedAt(field._2.toTransportDataType)) field._1 -> field._2.toTransportDataType
-
-                else  throw unexpected("Invalid arguments to write to a many2one field. Expected an Int or false, recieved: " + field._2.toTransportDataType)
 
               }
-              case _ => field._1 -> field._2.toTransportDataType
+              case _ => fieldName -> fieldValue
             }
-          ).getOrElse(throw new OpenERPException("Field " + field +  " doesn't exist?"))
+          ).getOrElse(throw new OpenERPException("Field " + fieldName +  " doesn't exist?"))
       )
-      )
+      }
     ).map(_.toMap)
 
   }
@@ -425,16 +406,30 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
 
   /**
    * Call an arbitrary object method on an object
+   *
+   * Here we require the parameters to be specified as
+   * [[com.tactix4.t4openerp.connector.transport.TransportDataType]]s
+   * the reason being is as follows:
+   *
+   * Since we need to use varargs for the parameters it makes it problematic using context bounds
+   * to specify a TransportDataConverter, as more than one parameter would quickly lead to a required
+   * TransportDataConverter[Seq[Any]\]
+   *
+   * Hence the decision to require TransportDataTypes to be supplied. The intention being, that if a
+   * 3rd party API is to be used with this method, a wrapper should be made around the API method,
+   * with explicit parameter types which can internally be transformed to TransportDataTypes
+   *
    * @param model the model where the method exists
    * @param methodName the method to call
    * @param params the parameters the method requires
    */
-  def callMethod[T:TransportDataConverter](model: String, methodName: String, params: T*)  : Future[TransportDataType] = {
+
+  def callMethod(model: String, methodName: String, params: TransportDataType*)  : Future[TransportDataType] = {
 
     config.path = RPCService.RPC_OBJECT
 
     val promise = Promise[TransportDataType]()
-    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, methodName, params.toList.toTransportDataType, context.toTransportDataType)
+    val result = transportAdaptor.sendRequest(config, "execute", TransportString(database) :: TransportNumber(uid) :: TransportString(password) :: TransportString(model) :: TransportString(methodName) :: params.toList ++ (context.toTransportDataType :: Nil))
 
     result.onComplete {
       case Success(s) => s.fold((error: String) => {
