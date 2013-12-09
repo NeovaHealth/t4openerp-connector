@@ -16,7 +16,8 @@
  */
 
 package com.tactix4.t4openerp.connector.transport
-
+import scala.util.control.Exception._
+import scala.reflect.ClassTag
 
 /**
  * @author max@tactix4.com
@@ -55,6 +56,12 @@ case class TransportArray(value: List[TransportDataType]) extends TransportDataT
 case class TransportMap(value: Map[String, TransportDataType]) extends TransportDataType{
   type T = Map[String, TransportDataType]
   def ++(o:TransportMap) = TransportMap(value ++ o.value)
+  def get[N <: TransportDataType](key:String)(implicit tag:ClassTag[N]):Option[N] ={
+    value.get(key).map {
+      case z@tag(x) => Some(z.asInstanceOf[N])
+      case _ => None
+    }.flatten
+  }
 }
 object TransportNull extends TransportDataType{
   type T = Null
