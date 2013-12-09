@@ -50,9 +50,11 @@ case class TransportString(value: String) extends TransportDataType{
 }
 case class TransportArray(value: List[TransportDataType]) extends TransportDataType{
   type T = List[TransportDataType]
+  def ++(o:TransportArray) = TransportArray(value ++ o.value)
 }
 case class TransportMap(value: Map[String, TransportDataType]) extends TransportDataType{
   type T = Map[String, TransportDataType]
+  def ++(o:TransportMap) = TransportMap(value ++ o.value)
 }
 object TransportNull extends TransportDataType{
   type T = Null
