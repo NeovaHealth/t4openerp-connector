@@ -55,6 +55,8 @@ case class TransportArray(value: List[TransportDataType]) extends TransportDataT
 }
 case class TransportMap(value: Map[String, TransportDataType]) extends TransportDataType{
   type T = Map[String, TransportDataType]
+  def mapValues[C<:TransportDataType](f: TransportDataType => C) : TransportMap = TransportMap(value.mapValues(f))
+  def filter(p: ((String,TransportDataType)) => Boolean): TransportMap = TransportMap(value.filter(p))
   def ++(o:TransportMap) = TransportMap(value ++ o.value)
   def get[N <: TransportDataType](key:String)(implicit tag:ClassTag[N]):Option[N] ={
     value.get(key).map {
@@ -63,7 +65,7 @@ case class TransportMap(value: Map[String, TransportDataType]) extends Transport
     }.flatten
   }
 }
-object TransportNull extends TransportDataType{
+case object TransportNull extends TransportDataType{
   type T = Null
   val value: TransportNull.T = null
 }
