@@ -16,7 +16,8 @@
  */
 
 package com.tactix4.t4openerp.connector.transport
-
+import scala.util.control.Exception._
+import scala.reflect.ClassTag
 
 /**
  * @author max@tactix4.com
@@ -39,6 +40,8 @@ sealed trait TransportDataType{
 case class TransportNumber[N:Numeric](value: N) extends TransportDataType{
   type T = N
   def toDouble:Double = implicitly[Numeric[N]].toDouble(value)
+  def toInt:Int = implicitly[Numeric[N]].toInt(value)
+  def toFloat:Float = implicitly[Numeric[N]].toFloat(value)
 }
 case class TransportBoolean(value: Boolean) extends TransportDataType{
   type T = Boolean
@@ -48,11 +51,21 @@ case class TransportString(value: String) extends TransportDataType{
 }
 case class TransportArray(value: List[TransportDataType]) extends TransportDataType{
   type T = List[TransportDataType]
+  def ++(o:TransportArray) = TransportArray(value ++ o.value)
 }
 case class TransportMap(value: Map[String, TransportDataType]) extends TransportDataType{
   type T = Map[String, TransportDataType]
+  def mapValues[C<:TransportDataType](f: TransportDataType => C) : TransportMap = TransportMap(value.mapValues(f))
+  def filter(p: ((String,TransportDataType)) => Boolean): TransportMap = TransportMap(value.filter(p))
+  def ++(o:TransportMap) = TransportMap(value ++ o.value)
+  def get[N <: TransportDataType](key:String)(implicit tag:ClassTag[N]):Option[N] ={
+    value.get(key).map {
+      case z@tag(x) => Some(z.asInstanceOf[N])
+      case _ => None
+    }.flatten
+  }
 }
-object TransportNull extends TransportDataType{
+case object TransportNull extends TransportDataType{
   type T = Null
   val value: TransportNull.T = null
 }
