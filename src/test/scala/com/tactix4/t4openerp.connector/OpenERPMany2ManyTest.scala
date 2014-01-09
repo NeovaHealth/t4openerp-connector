@@ -85,23 +85,23 @@ class OpenERPMany2ManyTest extends FunSuite with Futures {
       s <- session
       ids <- s.search("res.partner", "category_id" =/= false, limit=1)
       //set values to some value
-      update <- s.write("res.partner",ids, List("category_id"-> List(10,13)))
+      update <- s.write("res.partner",ids, Map("category_id"-> List(10,13)))
       //read starting values
       startVal <- s.read("res.partner", ids, List("category_id"))
       //update values
-      update <- s.write("res.partner",ids, List("category_id"-> List(10,8)))
+      update <- s.write("res.partner",ids, Map("category_id"-> List(10,8)))
       //read values again to check they've been changed
       check <- s.read("res.partner", ids, List("category_id"))
 
     } yield {println(startVal); check != startVal}
 
-    result.onComplete((value: Try[Boolean]) => value match {
+    result.onComplete {
       case Success(s) => s match {
-        case true   => println("Successful write")
-        case false  => fail("Unsuccessful write")
+        case true => println("Successful write")
+        case false => fail("Unsuccessful write")
       }
       case Failure(f) => fail(f)
-    })
+    }
 
     Await.result(result, 5 seconds)
   }
@@ -110,7 +110,7 @@ class OpenERPMany2ManyTest extends FunSuite with Futures {
     val result = for {
       s <- session
       ids <- s.search("res.partner", "category_id" =/= false, limit=1)
-      failwrite <- s.write("res.partner", ids, List("category_id" -> "Some value that doesn't make sense"))
+      failwrite <- s.write("res.partner", ids, Map("category_id" -> "Some value that doesn't make sense"))
     } yield failwrite
     intercept[OpenERPException]{
       Await.result(result, 2 seconds)

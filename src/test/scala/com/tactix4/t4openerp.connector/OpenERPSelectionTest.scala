@@ -50,13 +50,13 @@ class OpenERPSelectionTest extends FunSuite with Futures {
 
     val result = for {
       s <- session
-      w <- s.write("res.partner", 1, List("tz" -> "Sepekte/Ubulis"))
+      w <- s.write("res.partner", 1, Map("tz" -> "Sepekte/Ubulis"))
     } yield w
 
-    result.onComplete((value: Try[Boolean]) => value match{
+    result.onComplete {
       case Failure(f) => fail(f)
       case Success(s) => println("success")
-    })
+    }
     intercept[OpenERPException]{
       Await.result(result, 3 seconds)
     }
@@ -67,7 +67,7 @@ class OpenERPSelectionTest extends FunSuite with Futures {
 
     val result = for {
       s <- session
-      w <- s.write("res.partner", 1, List("tz" -> "Europe/London"))
+      w <- s.write("res.partner", 1, Map("tz" -> "Europe/London"))
     } yield w
 
     result.onComplete((value: Try[Boolean]) => value match{

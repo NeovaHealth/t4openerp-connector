@@ -15,7 +15,7 @@ resolvers ++= Seq(
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.2"
 
-libraryDependencies += "com.tactix4" %% "t4xmlrpc" % "1.0"
+libraryDependencies += "com.tactix4" %% "t4xmlrpc" % "1.1-SNAPSHOT"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.10.1" % "test"
 

@@ -51,13 +51,11 @@ object XmlRpcTransportAdaptor extends OpenERPTransportAdaptor with Logging{
 
      def read(obj: TransportDataType): XmlRpcDataValue = obj match {
        case TransportNumber(x:Int) => XmlRpcInt(x)
-       case TransportNumber(x:Double) => XmlRpcDouble(x)
-       case TransportNumber(x:Float) => XmlRpcDouble(x.toDouble)
-       case TransportNumber(x) => XmlRpcDouble(x.asInstanceOf[Double])
+       case x:TransportNumber[_] => XmlRpcDouble(x.toDouble)
        case TransportString(x) => XmlRpcString(x)
        case TransportBoolean(x) => XmlRpcBoolean(x)
-       case TransportArray(x) => XmlRpcArrayType(x.map(y => read(y)))
-       case TransportMap(x) => XmlRpcStructType(x.map(t => t._1 -> read(t._2)))
+       case TransportArray(x) => XmlRpcArray(x.map(y => read(y)))
+       case TransportMap(x) => XmlRpcStruct(x.map(t => t._1 -> read(t._2)))
        case TransportNull => XmlRpcBoolean(value = false)
      }
    }
@@ -74,8 +72,8 @@ object XmlRpcTransportAdaptor extends OpenERPTransportAdaptor with Logging{
     answer.onComplete(
       result => result match{
         case Success(r) => r match {
-          case s: XmlRpcResponseNormal =>  promise.complete(Try(s.params.headOption.map(_.toTransportDataType).toRight("Empty response from server")))
-          case s: XmlRpcResponseFault  =>  promise.complete(Try(Left(s.toString())))
+          case s: XmlRpcResponseNormal =>  promise.success(s.params.headOption.map(_.toTransportDataType).toRight("Empty response from server"))
+          case s: XmlRpcResponseFault  =>  promise.success(Left(s.toString()))
         }
         case Failure(e) => promise.failure(e)
       }

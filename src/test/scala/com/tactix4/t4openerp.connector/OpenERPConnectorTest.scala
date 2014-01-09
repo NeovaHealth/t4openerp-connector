@@ -26,6 +26,7 @@ import scala.concurrent.duration._
 import com.tactix4.t4openerp.connector.domain.Domain._
 import OpenERPSession._
 import com.tactix4.t4openerp.connector.exception.{OpenERPAuthenticationException, OpenERPException}
+import com.tactix4.t4openerp.connector.transport.TransportArray
 
 /**
  * Created by max@tactix4.com
@@ -45,12 +46,13 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
   val session = proxy.startSession(username,password,database)
 
+
   test("login to openerp host") {
     session.onComplete((value: Try[OpenERPSession]) => value match{
       case Failure(f) => fail(f)
       case Success(s) => println("logged in with uid: " + s.uid)
     })
-    Await.result(session, 1 second)
+    Await.result(session, 2 seconds)
 
   }
 
@@ -65,7 +67,7 @@ class OpenERPConnectorTest extends FunSuite with Futures {
       case Failure(f) => fail(f)
     })
 
-    Await.result(ids, 1 second)
+    Await.result(ids, 2 seconds)
 
   }
 
@@ -123,7 +125,7 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
     val result = for {
       s <- session
-      r <- s.create("res.partner",List("name" -> "McLovin"))
+      r <- s.create("res.partner",Map("name" -> "McLovin"))
     } yield r
 
     result.onComplete((value: Try[Int]) => value match {
@@ -137,7 +139,7 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
     val result = for {
       s <- session
-      r <- s.create("res.partner",List("namsdf09je" -> "McLovin"))
+      r <- s.create("res.partner",Map("namsdf09je" -> "McLovin"))
     } yield r
 
     result.onComplete((value: Try[Int]) => value match {
@@ -155,16 +157,30 @@ class OpenERPConnectorTest extends FunSuite with Futures {
     val result = for {
       s <- session
       ids <- s.search("res.partner", "name" === "McLovin")
-      r <- s.write("res.partner",ids, List("name" -> "McLovinUpdated"))
+      r <- s.write("res.partner",ids, Map("name" -> "McLovinUpdated"))
     } yield { r}
 
     //OpenERP returns TRUE whether we updated anything or not - useful!
-    result.onComplete((value: Try[Boolean]) => value match {
+    result.onComplete {
       case Success(s) => println("partner updated. Or Not. Who can tell?")
       case Failure(f) => fail(f)
-    })
+    }
 
     Await.result(result, 3 seconds)
+  }
+  test("update patient") {
+     val result = for {
+       s <- session
+       r <- s.write("t4clinical.patient", 4, Map("name" -> "Badman Jim"))
+     } yield r
+
+    result.onComplete{
+      case Success(s) => println(s)
+      case Failure(f) => fail(f)
+    }
+
+    Await.result(result, 3 seconds)
+
   }
 
   test("Delete partner in res.partner") {
@@ -176,32 +192,44 @@ class OpenERPConnectorTest extends FunSuite with Futures {
     } yield d
 
     //OpenERP returns TRUE whether we deleted anything or not - useful!
-    result.onComplete(_ match {
+    result.onComplete {
       case Success(s) => println("partner was deleted. Or not. I'm not sure.")
       case Failure(f) => fail(f)
-    })
+    }
     Await.result(result, 2 seconds)
+  }
+
+  test("call default_get on res.partner") {
+    val result = session.flatMap(_.defaultGet("res.partner", List("name", "website", "company", "email", "tz", "active")))
+
+    result.onComplete {
+      case Success(s) => println("result: " + s)
+      case Failure(f) => fail(f)
+    }
+    Await.result(result, 2 seconds)
+
+
   }
   test("call arbitrary method on openerp host") {
     val result = for {
       s <- session
-      x <- s.callMethod("res.partner", "read", List(1,2,3), List("email"))
+      x <- s.callMethod("res.partner", "read", TransportArray(List(1,2,3)), TransportArray(List("name")))
     } yield x
 
-    result.onComplete(_ match {
+    result.onComplete {
       case Success(s) => println(s)
       case Failure(f) => fail(f)
-    })
+    }
 
     Await.result(result, 2 seconds)
   }
 
   test("fail login to openerp host - bad password") {
     val session = proxy.startSession(username, password + "FAIL", database)
-    session.onComplete((value: Try[OpenERPSession]) => value match{
+    session.onComplete {
       case Failure(f) => fail(f)
       case Success(s) => println("logged in with uid: " + s.uid)
-    })
+    }
     intercept[OpenERPAuthenticationException]{
       Await.result(session, 1 second)
     }
@@ -210,10 +238,10 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
   test("fail login to openerp host - bad username") {
     val session = proxy.startSession(username+"092j3f09jfsd", password, database)
-    session.onComplete((value: Try[OpenERPSession]) => value match{
+    session.onComplete {
       case Failure(f) => fail(f)
       case Success(s) => println("logged in with uid: " + s.uid)
-    })
+    }
     intercept[OpenERPAuthenticationException]{
       Await.result(session, 1 second)
     }
@@ -222,10 +250,10 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
   test("fail login to openerp host - invalid db") {
     val session = proxy.startSession(username, password, database+"FAIL")
-    session.onComplete((value: Try[OpenERPSession]) => value match{
+    session.onComplete {
       case Failure(f) => fail(f)
       case Success(s) => println("logged in with uid: " + s.uid)
-    })
+    }
     intercept[OpenERPException]{
       Await.result(session, 1 second)
     }
