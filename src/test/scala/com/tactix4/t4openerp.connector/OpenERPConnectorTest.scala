@@ -171,7 +171,7 @@ class OpenERPConnectorTest extends FunSuite with Futures {
   test("update patient") {
      val result = for {
        s <- session
-       r <- s.write("t4clinical.patient", 4, Map("name" -> "Badman Jim"))
+       r <- s.write("res.partner", 4, Map("name" -> "Badman Jim"))
      } yield r
 
     result.onComplete{
