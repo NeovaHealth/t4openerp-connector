@@ -46,12 +46,13 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
   val session = proxy.startSession(username,password,database)
 
+
   test("login to openerp host") {
     session.onComplete((value: Try[OpenERPSession]) => value match{
       case Failure(f) => fail(f)
       case Success(s) => println("logged in with uid: " + s.uid)
     })
-    Await.result(session, 1 second)
+    Await.result(session, 2 seconds)
 
   }
 
@@ -66,7 +67,7 @@ class OpenERPConnectorTest extends FunSuite with Futures {
       case Failure(f) => fail(f)
     })
 
-    Await.result(ids, 1 second)
+    Await.result(ids, 2 seconds)
 
   }
 
@@ -167,6 +168,20 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
     Await.result(result, 3 seconds)
   }
+  test("update patient") {
+     val result = for {
+       s <- session
+       r <- s.write("t4clinical.patient", 4, Map("name" -> "Badman Jim"))
+     } yield r
+
+    result.onComplete{
+      case Success(s) => println(s)
+      case Failure(f) => fail(f)
+    }
+
+    Await.result(result, 3 seconds)
+
+  }
 
   test("Delete partner in res.partner") {
 
@@ -182,6 +197,18 @@ class OpenERPConnectorTest extends FunSuite with Futures {
       case Failure(f) => fail(f)
     }
     Await.result(result, 2 seconds)
+  }
+
+  test("call default_get on res.partner") {
+    val result = session.flatMap(_.defaultGet("res.partner", List("name", "website", "company", "email", "tz", "active")))
+
+    result.onComplete {
+      case Success(s) => println("result: " + s)
+      case Failure(f) => fail(f)
+    }
+    Await.result(result, 2 seconds)
+
+
   }
   test("call arbitrary method on openerp host") {
     val result = for {

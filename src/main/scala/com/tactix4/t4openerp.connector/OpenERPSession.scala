@@ -405,6 +405,31 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
   }
 
   /**
+   * Return the default values for a model
+   * @param model the model to query
+   * @param fields the fields we want the default values for
+   * @return a Map containing the default values
+   */
+  def defaultGet(model:String, fields:List[String]) : Future[Map[String, Any]] = {
+    config.path = RPCService.RPC_OBJECT
+
+    val promise = Promise[Map[String,Any]]()
+
+    val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "default_get", TransportArray(fields.map(TransportString)), context.toTransportDataType)
+
+    result.onComplete{
+      case Success(s) => s.fold(error => {logger.error(error); promise.failure(new OpenERPException(error))},
+        (result: TransportDataType) => result match {
+          case TransportMap(m) => promise.success(m.mapValues(_.value))
+          case _ => promise.failure(unexpected(result.toString))
+        })
+      case Failure(f) => promise.failure(f)
+        }
+
+    promise.future
+  }
+
+  /**
    * Call an arbitrary object method on an object
    *
    * Here we require the parameters to be specified as
