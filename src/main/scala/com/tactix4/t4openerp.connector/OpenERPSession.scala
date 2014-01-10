@@ -447,20 +447,22 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @param model the model where the method exists
    * @param methodName the method to call
    * @param params the parameters the method requires
+   * @tparam A the return type wrapped in a [[scala.concurrent.Future]]
+   *
    */
 
-  def callMethod(model: String, methodName: String, params: TransportDataType*)  : Future[TransportDataType] = {
+  def callMethod[A](model: String, methodName: String, params: TransportDataType*)  : Future[A] = {
 
     config.path = RPCService.RPC_OBJECT
 
-    val promise = Promise[TransportDataType]()
+    val promise = Promise[A]()
     val result = transportAdaptor.sendRequest(config, "execute", TransportString(database) :: TransportNumber(uid) :: TransportString(password) :: TransportString(model) :: TransportString(methodName) :: params.toList ++ (context.toTransportDataType :: Nil))
 
     result.onComplete {
       case Success(s) => s.fold((error: String) => {
         logger.error(error); promise.failure(new OpenERPException(error))
       },
-        r => promise.success(r))
+        r => promise.complete(Try(r.asInstanceOf[A])))
       case Failure(f) => promise.failure(f)
     }
 

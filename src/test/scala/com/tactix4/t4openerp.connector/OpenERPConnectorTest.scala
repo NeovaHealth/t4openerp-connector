@@ -213,7 +213,7 @@ class OpenERPConnectorTest extends FunSuite with Futures {
   test("call arbitrary method on openerp host") {
     val result = for {
       s <- session
-      x <- s.callMethod("res.partner", "read", TransportArray(List(1,2,3)), TransportArray(List("name")))
+      x <- s.callMethod[String]("res.partner", "read", TransportArray(List(1,2,3)), TransportArray(List("name")))
     } yield x
 
     result.onComplete {
