@@ -210,10 +210,10 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return
    * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[com.tactix4.t4openerp.connector.transport.OpenERPTransportAdaptor]]
    */
- def read(model: String, ids: List[Int], fieldNames: List[String] = Nil) : Future[ResultType] = {
+ def read[A](model: String, ids: List[Int], fieldNames: List[String] = Nil) : Future[ResultType[A]] = {
 
     config.path = RPCService.RPC_OBJECT
-    val promise = Promise[ResultType]()
+    val promise = Promise[ResultType[A]]()
     val result = for{
       values <-  transportAdaptor.sendRequest(config, "execute",database,uid,password,model,"read", ids.toTransportDataType, fieldNames.toTransportDataType,context.toTransportDataType)
     } yield values
@@ -221,16 +221,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     result.onComplete({
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
-        (result: TransportDataType) => result match {
-            case TransportArray(x) => promise.complete(Try(x.map({
-              case y:TransportMap => y.value
-              case fail => throw unexpected(fail.toString)
-            })))
-            case fail => promise.failure(unexpected(fail.toString))
-
-          }
-        )
-
+        (result: TransportDataType) => promise.complete(Try(result.asInstanceOf[ResultType[A]])))
       case Failure(f) => promise.failure(f)
     })
 
@@ -247,15 +238,15 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @param order the column name by which to sort the results
    * @return a [[scala.concurrent.Future]] containing the results of the query
    */
-  def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = "") : Future[ResultType] = {
+  def searchAndRead[A](model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = "") : Future[ResultType[A]] = {
 
     config.path = RPCService.RPC_OBJECT
 
-    val promise = Promise[ResultType]()
+    val promise = Promise[ResultType[A]]()
 
     val result = for{
       obsIds <- search(model,domain, offset, limit, order)
-      obsValues <- read(model,obsIds, fields)
+      obsValues <- read[A](model,obsIds, fields)
     } yield obsValues
 
     result.onComplete({
@@ -410,17 +401,17 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @param fields the fields we want the default values for
    * @return a Map containing the default values
    */
-  def defaultGet(model:String, fields:List[String]) : Future[Map[String, Any]] = {
+  def defaultGet[A](model:String, fields:List[String]) : Future[Map[String, A]] = {
     config.path = RPCService.RPC_OBJECT
 
-    val promise = Promise[Map[String,Any]]()
+    val promise = Promise[Map[String,A]]()
 
     val result = transportAdaptor.sendRequest(config, "execute", database, uid, password, model, "default_get", TransportArray(fields.map(TransportString)), context.toTransportDataType)
 
     result.onComplete{
       case Success(s) => s.fold(error => {logger.error(error); promise.failure(new OpenERPException(error))},
         (result: TransportDataType) => result match {
-          case TransportMap(m) => promise.success(m.mapValues(_.value))
+          case TransportMap(m) => promise.complete(Try(m.mapValues(_.value).asInstanceOf[Map[String,A]]))
           case _ => promise.failure(unexpected(result.toString))
         })
       case Failure(f) => promise.failure(f)
