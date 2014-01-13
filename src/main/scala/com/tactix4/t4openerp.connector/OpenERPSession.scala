@@ -221,7 +221,16 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     result.onComplete({
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
-        (result: TransportDataType) => promise.complete(Try(result.asInstanceOf[ResultType[A]])))
+        (result: TransportDataType) => promise.complete(Try{ result match{
+           case TransportArray(x) => {
+              val s: List[Map[String, A]] = x.map {
+                case TransportMap(y) => y.filterKeys(k => fieldNames contains k).mapValues(_.asInstanceOf[A])
+                case fail => throw new OpenERPException("expected TransportMap, found: " + fail)
+              }
+             s
+           }
+        }
+        }))
       case Failure(f) => promise.failure(f)
     })
 
@@ -453,7 +462,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
       case Success(s) => s.fold((error: String) => {
         logger.error(error); promise.failure(new OpenERPException(error))
       },
-        r => promise.complete(Try(r.asInstanceOf[A])))
+        r => promise.complete(Try(r.value.asInstanceOf[A])))
       case Failure(f) => promise.failure(f)
     }
 

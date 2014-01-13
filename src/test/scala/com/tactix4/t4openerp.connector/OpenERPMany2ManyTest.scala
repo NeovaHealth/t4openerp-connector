@@ -52,10 +52,10 @@ class OpenERPMany2ManyTest extends FunSuite with Futures {
   test("Query category_id field in res.partner") {
     val result = for {
       s <- session
-      r <- s.searchAndRead(model="res.partner", fields="category_id")
+      r <- s.searchAndRead[Any](model="res.partner", fields="category_id")
     } yield r
 
-    result.onComplete((value: Try[ResultType]) => value match{
+    result.onComplete((value: Try[ResultType[Any]]) => value match{
       case Success(s) => println(s)
       case Failure(f) => fail(f)
     })
@@ -67,10 +67,10 @@ class OpenERPMany2ManyTest extends FunSuite with Futures {
   test("Query only non-empty category_id field in res.partner") {
     val result = for {
       s <- session
-      r <- s.searchAndRead("res.partner", "category_id" =/= false, "category_id")
+      r <- s.searchAndRead[Any]("res.partner", "category_id" =/= false, "category_id")
     } yield r
 
-    result.onComplete((value: Try[ResultType]) => value match{
+    result.onComplete((value: Try[ResultType[Any]]) => value match{
       case Success(s) => println(s)
       case Failure(f) => fail(f)
     })
@@ -87,11 +87,11 @@ class OpenERPMany2ManyTest extends FunSuite with Futures {
       //set values to some value
       update <- s.write("res.partner",ids, Map("category_id"-> List(10,13)))
       //read starting values
-      startVal <- s.read("res.partner", ids, List("category_id"))
+      startVal <- s.read[Any]("res.partner", ids, List("category_id"))
       //update values
       update <- s.write("res.partner",ids, Map("category_id"-> List(10,8)))
       //read values again to check they've been changed
-      check <- s.read("res.partner", ids, List("category_id"))
+      check <- s.read[Any]("res.partner", ids, List("category_id"))
 
     } yield {println(startVal); check != startVal}
 

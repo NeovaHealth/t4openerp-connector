@@ -72,7 +72,7 @@ package object connector{
 
   type TransportResponse = Either[String,TransportDataType]
 
-  type ResultType[B] = List[Map[String, B]]
+  type ResultType[A] = List[Map[String,A]]
 
 
   implicit def StringToTransportString(s: String) = new TransportString(s)

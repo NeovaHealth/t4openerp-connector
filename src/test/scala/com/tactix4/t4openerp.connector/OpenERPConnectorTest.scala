@@ -19,7 +19,7 @@ package com.tactix4.t4openerp.connector
 import com.typesafe.config._
 import org.scalatest.concurrent._
 import org.scalatest.FunSuite
-import scala.concurrent.Await
+import scala.concurrent.{Future, Await}
 import scala.util.{Try, Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -44,7 +44,7 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
   val proxy = new OpenERPConnector("http", openerpHost,openerpPort)
 
-  val session = proxy.startSession(username,password,database)
+  val session = proxy.startSession(username,password,database).map( s => {s.context.setTimeZone("Europe/London"); s})
 
 
   test("login to openerp host") {
@@ -59,13 +59,13 @@ class OpenERPConnectorTest extends FunSuite with Futures {
   test("Read from res.partner table") {
     val ids = for {
       s <- session
-      i <-  s.read("res.partner",List(1,2,3))
+      i <-  s.read[Any]("res.partner",List(1,2,3))
     } yield i
 
-    ids.onComplete((value: Try[ResultType]) => value match {
-      case Success(s) => s.foreach(_ foreach println)
+    ids.onComplete {
+      case Success(s) => println(s)
       case Failure(f) => fail(f)
-    })
+    }
 
     Await.result(ids, 2 seconds)
 
@@ -75,13 +75,13 @@ class OpenERPConnectorTest extends FunSuite with Futures {
   test("Fail to Read from nonexistant table") {
     val ids = for {
       s <- session
-      i <- s.read("res.partnerzoid", 1)
+      i <- s.read[Any]("res.partnerzoid", 1)
     } yield i
 
-    ids.onComplete((value: Try[ResultType]) => value match {
-      case Success(s) => s.foreach(_ foreach println)
+    ids.onComplete {
+      case Success(s) => println(s)
       case Failure(f) => fail(f)
-    })
+    }
 
     intercept[OpenERPException]{
       Await.result(ids, 1 seconds)
@@ -94,10 +94,10 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
     val allObs = for {
       s <- session
-      obs <- s.searchAndRead("res.partner", limit = 10)
+      obs <- s.searchAndRead[Any]("res.partner", limit = 10)
     } yield obs
 
-    allObs.onComplete((value: Try[ResultType]) => value match {
+    allObs.onComplete((value: Try[ResultType[Any]]) => value match {
       case Success(s) => println("success")
       case Failure(f) => fail(f)
     }  )
@@ -109,10 +109,10 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
     val allObs = for {
       s <- session
-      obs <- s.searchAndRead("res.partner", ("email" ilike "info@") AND (("is_company" =/= true) OR ("zip" === "60623")), "category_id", limit = 10)
+      obs <- s.searchAndRead[Any]("res.partner", ("email" ilike "info@") AND (("is_company" =/= true) OR ("zip" === "60623")), "category_id", limit = 10)
     } yield obs
 
-    allObs.onComplete((value: Try[ResultType]) => value match {
+    allObs.onComplete((value: Try[ResultType[Any]]) => value match {
       case Success(s) => println("success")//s.foreach(_ foreach println)
       case Failure(f) => fail(f)
     })
@@ -211,9 +211,9 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
   }
   test("call arbitrary method on openerp host") {
-    val result = for {
+    val result: Future[List[String]] = for {
       s <- session
-      x <- s.callMethod[String]("res.partner", "read", TransportArray(List(1,2,3)), TransportArray(List("name")))
+      x <- s.callMethod[List[String]]("res.partner", "read", TransportArray(List(1,2,3)), TransportArray(List("name")))
     } yield x
 
     result.onComplete {
