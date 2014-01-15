@@ -46,6 +46,14 @@ class OpenERPConnectorTest extends FunSuite with Futures {
 
   val session = proxy.startSession(username,password,database).map( s => {s.context.setTimeZone("Europe/London"); s})
 
+  test("test database list") {
+    val result:Future[List[String]] = proxy.getDatabaseList
+
+    result.onComplete({
+      case Success(s) => println("Databases: " + s)
+      case Failure(f) => fail(f)
+    })
+  }
 
   test("login to openerp host") {
     session.onComplete((value: Try[OpenERPSession]) => value match{

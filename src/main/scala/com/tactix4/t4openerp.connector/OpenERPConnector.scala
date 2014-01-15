@@ -41,6 +41,24 @@ class OpenERPConnector(protocol: String, host: String, port: Int, numWorkers: In
   val config = OpenERPTransportAdaptorConfig(protocol, host, port, RPCService.RPC_COMMON.toString)
   val transportClient:OpenERPTransportAdaptor = XmlRpcTransportAdaptor
 
+
+  def getDatabaseList:Future[List[String]] ={
+    config.path = RPCService.RPC_DATABASE.toString
+
+    val promise = Promise[List[String]]()
+    transportClient.sendRequest(config, "list",Nil).onComplete({
+      case Success(s) => s.fold(
+        (error: String) => promise.failure(new OpenERPException(error)),
+        (result: TransportDataType) => result.value match {
+          case x:List[_] => promise.success(x.map(_.toString))
+          case fail => promise.failure(new OpenERPException("unexpected response in getDatabaseList: " + fail))
+        })
+      case Failure(f) => promise.failure(f)
+    })
+
+    promise.future
+  }
+
   /**
    * Begin a session with openerp by logging in a receiving a userid which is to be used in
    * subsequent requests

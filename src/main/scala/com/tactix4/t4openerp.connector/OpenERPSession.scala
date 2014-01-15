@@ -230,6 +230,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
               }
              s
            }
+           case _ => throw new OpenERPException("Expected Array, found: " + result)
         }
         }))
       case Failure(f) => promise.failure(f)
