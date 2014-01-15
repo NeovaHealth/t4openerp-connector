@@ -51,36 +51,27 @@ class Test extends FunSuite{
 
 
 //  test("test some stuff") {
-//      val taskIds = for {
+//      val r = for {
 //        s <- session
 //        taskTypeId  <- s.search("t4clinical.task.type", "name" === "AssignBed")
 //        vOfTasks    <- s.searchAndRead[Int]("t4clinical.task.base", "task_type_id" === taskTypeId.head AND "state" =/= "done", List("visit_id", "task_id", "id"))
-//        posOfTasks  <- s.read[Int]("t4clinical.patient.visit",vOfTasks.map(_("visit_id").asInstanceOf[TransportArray].value.head.toString.toInt), List("pos_location"))
+//        posOfTasks  <- s.read[Int]("t4clinical.patient.visit",vOfTasks.map(_("visit_id").asInstanceOf[List[_]].head.toString.toInt), List("pos_location"))
 //        employeePos <- s.searchAndRead[Int]("hr.employee", "user_id" === s.uid, List("pos_location_ids"))
-//        employeePosIds <- Future.successful(employeePos.flatMap(_("pos_location_ids").asInstanceOf[TransportArray].value.map(_.toString.toInt)))
-//        posId       <- Future.successful(posOfTasks.map(_("pos_location").asInstanceOf[TransportArray].value.head.toString.toInt))
-//        allTaskId   <- Future.successful(vOfTasks.map(_("id").asInstanceOf[TransportNumber[Int]].value))
+//        employeePosIds <- Future.successful(employeePos.flatMap(_("pos_location_ids").asInstanceOf[List[_]].map(_.toString.toInt)))
+//        posId       <- Future.successful(posOfTasks.map(_("pos_location").asInstanceOf[List[_]].head.toString.toInt))
+//        allTaskId   <- Future.successful(vOfTasks.map(_("id")))
 //        taskIds     <- Future.successful((allTaskId zip posId).filter(x => employeePosIds contains x._2 ).map(_._1))
 //        n           <- s.searchAndRead[String]("t4clinical.pos.delivery", "id"  in TransportArray(employeePosIds.map(TransportNumber(_))), "name")
-//        names       <- Future.successful{n.map(_("name").toString)}
+//        names       <- Future.successful{n.map(_("name").value)}
 //        freeBeds    <- s.search("t4clinical.pos.delivery", "parent_id" in TransportArray(names.map(TransportString)) AND "occupants" === TransportNull)
 //        result      <- s.callMethod[Boolean]("t4clinical.task.base","assignLocationFromTask",TransportNumber(taskIds.head), TransportNumber(freeBeds.head))
 //      } yield result
 //
-////
-////    val freeBeds = for {
-////      s <- session
-////      bedIds  <- s.search("t4clinical.pos.delivery", "parent_id" === ""
-////    }
 //
-//
-//    taskIds.onComplete {
+//    r.onComplete {
 //      case Success(s) => println("result: " + s)
 //        case Failure(f) => fail(f)
 //      }
 //      Await.result(taskIds, 2 minutes)
-//
-//
-//
 //  }
 }

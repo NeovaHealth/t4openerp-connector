@@ -28,6 +28,7 @@ import transport._
 import com.tactix4.t4openerp.connector.exception.OpenERPException
 import com.tactix4.t4openerp.connector.field.Field
 import java.util.Date
+import scala.reflect.ClassTag
 
 /**
  * An OpenERPSession represents a current session to an OpenERP server.
@@ -210,7 +211,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return
    * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[com.tactix4.t4openerp.connector.transport.OpenERPTransportAdaptor]]
    */
- def read[A](model: String, ids: List[Int], fieldNames: List[String] = Nil) : Future[ResultType[A]] = {
+ def read[A:ClassTag](model: String, ids: List[Int], fieldNames: List[String] = Nil) : Future[ResultType[A]] = {
 
     config.path = RPCService.RPC_OBJECT
     val promise = Promise[ResultType[A]]()
@@ -224,7 +225,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
         (result: TransportDataType) => promise.complete(Try{ result match{
            case TransportArray(x) => {
               val s: List[Map[String, A]] = x.map {
-                case TransportMap(y) => y.filterKeys(k => fieldNames contains k).mapValues(_.asInstanceOf[A])
+                case TransportMap(y) => y.filterKeys(k => fieldNames contains k).map(v => v._1 -> v._2.value.asInstanceOf[A])
                 case fail => throw new OpenERPException("expected TransportMap, found: " + fail)
               }
              s
@@ -247,7 +248,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @param order the column name by which to sort the results
    * @return a [[scala.concurrent.Future]] containing the results of the query
    */
-  def searchAndRead[A](model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = "") : Future[ResultType[A]] = {
+  def searchAndRead[A:ClassTag](model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = "") : Future[ResultType[A]] = {
 
     config.path = RPCService.RPC_OBJECT
 
