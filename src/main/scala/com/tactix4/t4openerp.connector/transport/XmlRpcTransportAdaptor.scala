@@ -51,7 +51,11 @@ object XmlRpcTransportAdaptor extends OpenERPTransportAdaptor with Logging{
 
      def read(obj: TransportDataType): XmlRpcDataValue = obj match {
        case TransportNumber(x:Int) => XmlRpcInt(x)
-       case x:TransportNumber[_] => XmlRpcDouble(x.toDouble)
+       case x:TransportNumber[_] => XmlRpcDouble({
+		val floatToDoubleRounding = new java.math.MathContext(4, java.math.RoundingMode.HALF_UP)
+		val floatToDouble = BigDecimal(x, floatToDoubleRounding) 		
+		floatToDouble.toDouble
+	})
        case TransportString(x) => XmlRpcString(x)
        case TransportBoolean(x) => XmlRpcBoolean(x)
        case TransportArray(x) => XmlRpcArray(x.map(y => read(y)))
