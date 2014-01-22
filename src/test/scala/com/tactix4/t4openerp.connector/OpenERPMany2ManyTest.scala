@@ -56,11 +56,11 @@ class OpenERPMany2ManyTest extends FunSuite with Futures {
     } yield r
 
     result.onComplete((value: Try[ResultType[Any]]) => value match{
-      case Success(s) => println(s)
+      case Success(s) => println("success")
       case Failure(f) => fail(f)
     })
 
-    Await.result(result, 2 seconds)
+    Await.result(result, 5 seconds)
 
   }
 
