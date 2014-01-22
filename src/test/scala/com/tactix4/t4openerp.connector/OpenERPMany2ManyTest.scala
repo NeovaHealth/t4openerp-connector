@@ -103,7 +103,7 @@ class OpenERPMany2ManyTest extends FunSuite with Futures {
       case Failure(f) => fail(f)
     }
 
-    Await.result(result, 5 seconds)
+    Await.result(result, 10 seconds)
   }
 
   test("Fail on Update category_id with invalid value") {
