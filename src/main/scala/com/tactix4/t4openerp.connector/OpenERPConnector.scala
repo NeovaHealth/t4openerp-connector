@@ -89,7 +89,7 @@ class OpenERPConnector(protocol: String, host: String, port: Int, numWorkers: In
             case _:TransportBoolean => result.failure( new OpenERPAuthenticationException("login failed with username: " + username + " and password: " + password))
             case TransportNumber(i:Int) => {
               val session = new OpenERPSession(transportClient,config,database,i, password)
-              session.getContextFromServer.onComplete(_ match{
+              session.setContextFromServer.onComplete(_ match{
                 case Success(s) => result.complete(Try(session))
                 case Failure(fail) => result.failure(fail)
               })

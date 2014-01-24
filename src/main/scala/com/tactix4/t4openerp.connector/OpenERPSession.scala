@@ -118,7 +118,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return true indicating success
    * @throws OpenERPException if the response was not expected
    */
-   def getContextFromServer : Future[Boolean] = {
+   def setContextFromServer : Future[Boolean] = {
     val promise = Promise[Boolean]()
       config.path = RPCService.RPC_OBJECT
       val answer = transportAdaptor.sendRequest(config,"execute",TransportString(database), TransportNumber(uid), TransportString(password), TransportString("res.users"), TransportString("context_get"))
@@ -128,8 +128,8 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
             (error: String) => {logger.error("Recieved a fault from openerp server: " + error); promise.failure(new OpenERPException(error))},
             (result: TransportDataType) => result  match {
               case TransportMap(m) => {
-                m.find(t => t._1 == "lang").map(v =>  context.setLanguage(v._2.toString))
-                m.find(t => t._1 == "tz").map(v => context.setTimeZone(v._2.toString))
+                m.find(t => t._1 == "lang").filter(_._2.toString != "false").map(v =>  context.setLanguage(v._2.toString))
+                m.find(t => t._1 == "tz").filter(_._2.toString != "false").map(v => context.setTimeZone(v._2.toString))
                 promise.complete(Try(true))
               }
               case unexpected => promise.failure(new OpenERPException("unexpected response type: " + unexpected))
