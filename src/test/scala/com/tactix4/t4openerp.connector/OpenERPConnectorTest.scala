@@ -125,7 +125,7 @@ class OpenERPConnectorTest extends FunSuite with Futures {
       case Failure(f) => fail(f)
     })
 
-    Await.result(allObs, 1 seconds)
+    Await.result(allObs, 5 seconds)
   }
 
 
