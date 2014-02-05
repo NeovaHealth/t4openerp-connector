@@ -225,7 +225,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
         (result: TransportDataType) => promise.complete(Try{ result match{
            case TransportArray(x) => {
               val s: List[Map[String, A]] = x.map {
-                case TransportMap(y) => y.filterKeys(k => fieldNames contains k).map(v => v._1 -> v._2.value.asInstanceOf[A])
+                case TransportMap(y) => y.filterKeys(k => fieldNames.isEmpty || (fieldNames contains k) ).map(v => v._1 -> v._2.value.asInstanceOf[A])
                 case fail => throw new OpenERPException("expected TransportMap, found: " + fail)
               }
              s
