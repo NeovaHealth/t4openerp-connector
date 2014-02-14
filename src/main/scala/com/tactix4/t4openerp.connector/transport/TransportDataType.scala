@@ -68,6 +68,7 @@ case class TransportMap(value: Map[String, TransportDataType]) extends Transport
 case object TransportNull extends TransportDataType{
   type T = Null
   val value: TransportNull.T = null
+  override def toString : String = "Null"
 }
 
 
