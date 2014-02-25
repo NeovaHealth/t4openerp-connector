@@ -108,7 +108,7 @@ case class NOT(value: DomainTuple) extends Domain {
  * @param operator the operator of the filter
  * @param value the value of the filter
  */
-case class DomainTuple(fieldName: String, operator: String, value:TransportDataType) extends Domain {
+case class DomainTuple(fieldName: String, operator: String, value:OERPType) extends Domain {
   override def toString = "('" + fieldName + "','" + operator + "','" + value + "')"
 
   /**
@@ -129,54 +129,54 @@ final class DomainOperator(s: String) {
    * @param n the value of equality we are testing for
    * @return a DomainTuple representing equality
    */
-  def ===(n: TransportDataType)           = DomainTuple(s, "=", n)
+  def ===(n: OERPType)           = DomainTuple(s, "=", n)
 
   /**
    * Inequality
    * @param n the value of inequality we are testing for
    * @return a DomainTuple representing inequality
    */
-  def =/=(n: TransportDataType)           = DomainTuple(s, "!=", n)
+  def =/=(n: OERPType)           = DomainTuple(s, "!=", n)
 
   /**
    * LessThan
    * @param n the value which we are asserting is LessThan `this`
    * @return a DomainTuple representing a LessThan domain filter
    */
-  def lt(n: TransportDataType)            = DomainTuple(s, "<", n)
+  def lt(n: OERPType)            = DomainTuple(s, "<", n)
   /**
    * GreaterThan
    * @param n the value which we are asserting is GreaterThan `this`
    * @return a DomainTuple representing a GreaterThan domain filter
    */
-  def gt(n: TransportDataType)            = DomainTuple(s, ">", n)
+  def gt(n: OERPType)            = DomainTuple(s, ">", n)
 
   /**
    * Like
    * @param n the value which `this` is like
    * @return a DomainTuple representing an SQLish like pattern match
    */
-  def like(n: TransportDataType)          = DomainTuple(s, "like", n)
+  def like(n: OERPType)          = DomainTuple(s, "like", n)
 
   /**
    * Case insensitive Like
    * @param n the value which `this` is like
    * @return a DomainTuple representing an SQLish like pattern match - case insensitive
    */
-  def ilike(n: TransportDataType)         = DomainTuple(s, "ilike", n)
+  def ilike(n: OERPType)         = DomainTuple(s, "ilike", n)
 
   /**
    * In
    * @param n a list or tuple that the value of `this` should be in
    * @return a DomainTuple representing a test for s being in n
    */
-  def in(n: TransportDataType)            = DomainTuple(s, "in", n)
+  def in(n: OERPType)            = DomainTuple(s, "in", n)
   /**
    * Not In
    * @param n a list or tuple that the value of `this` should not be in
    * @return a DomainTuple representing a test for s not being in n
    */
-  def not_in(n: TransportDataType)        = DomainTuple(s, "not in", n)
+  def not_in(n: OERPType)        = DomainTuple(s, "not in", n)
 
   /**
    * Child Of
@@ -185,7 +185,7 @@ final class DomainOperator(s: String) {
    * @param n the parent of `this`
    * @return a DomainTuple representing a test for a child_of relationship
    */
-  def child_of(n: TransportDataType)      = DomainTuple(s, "child_of", n)
+  def child_of(n: OERPType)      = DomainTuple(s, "child_of", n)
 
   /**
    * parent left
@@ -193,14 +193,14 @@ final class DomainOperator(s: String) {
    * @param n the subject being tested for being a child of `this`
    * @return a DomainTuple representing a test for a parent_left relationship
    */
-  def parent_left(n: TransportDataType)   = DomainTuple(s, "parent_left", n)
+  def parent_left(n: OERPType)   = DomainTuple(s, "parent_left", n)
   /**
    * parent right
    * @see [[http://stackoverflow.com/questions/11861436/parent-left-and-parent-right-in-openerp]]
    * @param n the subject being tested for being a child of `this`
    * @return a DomainTuple representing a test for a parent_right relationship
    */
-  def parent_right(n: TransportDataType)  = DomainTuple(s, "parent_right", n)
+  def parent_right(n: OERPType)  = DomainTuple(s, "parent_right", n)
 }
 
 /**
@@ -231,8 +231,8 @@ object Domain {
    */
   implicit object DomainToTransportData extends TransportDataConverter[Domain]{
     //TODO: make tail recursive
-    def write(obj: Domain): TransportDataType = {
-      def loop(tree: Domain): List[TransportDataType] =
+    def write(obj: Domain): OERPType = {
+      def loop(tree: Domain): List[OERPType] =
         tree match {
           case e: AND => TransportString("&") :: loop(e.left) ++ loop(e.right)
           case e: OR => TransportString("|") :: loop(e.left) ++ loop(e.right)
@@ -241,7 +241,7 @@ object Domain {
         }
       TransportArray(loop(obj))
     }
-     def read(obj: TransportDataType) = ??? //not needed
+     def read(obj: OERPType) = ??? //not needed
    }
 }
 

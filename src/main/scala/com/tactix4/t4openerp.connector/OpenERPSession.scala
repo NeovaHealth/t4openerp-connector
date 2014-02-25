@@ -98,7 +98,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
         case Success(s) =>
           s.fold(
           (error: String) => { logger.error(error); promise.failure(new OpenERPException(error)) },
-          (result: TransportDataType) => result  match {
+          (result: OERPType) => result  match {
             case t: TransportMap => {
                 val theFields = t.value.collect { case (x, y: TransportMap) => new Field(x.value, y) }
                 if(theFields.size != t.value.size) throw unexpected(t.toString)
@@ -126,7 +126,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
         value match {
           case Success(x) => x.fold(
             (error: String) => {logger.error("Recieved a fault from openerp server: " + error); promise.failure(new OpenERPException(error))},
-            (result: TransportDataType) => result  match {
+            (result: OERPType) => result  match {
               case TransportMap(m) => {
                 m.find(t => t._1 == "lang").filter(_._2.toString != "false").map(v =>  context.setLanguage(v._2.toString))
                 m.find(t => t._1 == "tz").filter(_._2.toString != "false").map(v => context.setTimeZone(v._2.toString))
@@ -187,7 +187,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     result.onComplete({
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
-        (result: TransportDataType) => result match {
+        (result: OERPType) => result match {
             case TransportArray(a) => promise.complete(Try(a.map( {
               case TransportNumber(y:Int) => y
               case x => throw unexpected(x.toString)
@@ -222,7 +222,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     result.onComplete({
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
-        (result: TransportDataType) => promise.complete(Try{ result match{
+        (result: OERPType) => promise.complete(Try{ result match{
            case TransportArray(x) => {
               val s: List[Map[String, A]] = x.map {
                 case TransportMap(y) => y.filterKeys(k => fieldNames contains k).map(v => v._1 -> v._2.value.asInstanceOf[A])
@@ -286,7 +286,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     result.onComplete({
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
-        (result: TransportDataType) => result  match {
+        (result: OERPType) => result  match {
             case TransportNumber(i:Int) => promise.complete(Try(i))
             case fail => promise.failure(unexpected(fail.toString))
           }
@@ -311,7 +311,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @throws OpenERPException if the write fails
    */
   def write(model: String, ids: List[Int], fields: Map[String, Any]) : Future[Boolean] = {
-    val processedFields: Future[Map[String, TransportDataType]] = validateParams(model,fields.mapValues(anyToTDT))
+    val processedFields: Future[Map[String, OERPType]] = validateParams(model,fields.mapValues(anyToTDT))
 
     config.path = RPCService.RPC_OBJECT
 
@@ -326,7 +326,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
     result.onComplete({
       case Success(s) => s.fold(
         (error: String) => { logger.error(error); promise.failure(new OpenERPException(error))},
-        (result: TransportDataType) => result  match{
+        (result: OERPType) => result  match{
           case TransportBoolean(b) => promise.complete(Try(b))
           case fail => promise.failure(unexpected(result.toString))
         })
@@ -343,12 +343,12 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * @return the list of fieldName -> fieldValue tuples, formatted appropriately
    * @throws OpenERPException if the field values are invalid for the type of field
    */
-  private[OpenERPSession] def validateParams(model: String, fields: Map[String, TransportDataType]): Future[Map[String, TransportDataType]] = {
+  private[OpenERPSession] def validateParams(model: String, fields: Map[String, OERPType]): Future[Map[String, OERPType]] = {
 
 
       Future.sequence(
 
-      fields.map{ case (fieldName:String, fieldValue:TransportDataType) => getFieldType(model,fieldName).map(_.map({
+      fields.map{ case (fieldName:String, fieldValue:OERPType) => getFieldType(model,fieldName).map(_.map({
               //we're simplifying the write method for many2many and simply providing the 'replace' option
               case "many2many" => {
                 /*  valid args are an array of ints */
@@ -396,7 +396,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
 
     result.onComplete((value: Try[TransportResponse]) => value match {
       case Success(s) => s.fold((error: String) => {logger.error(error); promise.failure(new OpenERPException(error))},
-        (result: TransportDataType) => result  match {
+        (result: OERPType) => result  match {
             case TransportBoolean(b) => promise.complete(Try(b))
             case fail => promise.failure(unexpected(result.toString))
           })
@@ -421,7 +421,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
 
     result.onComplete{
       case Success(s) => s.fold(error => {logger.error(error); promise.failure(new OpenERPException(error))},
-        (result: TransportDataType) => result match {
+        (result: OERPType) => result match {
           case TransportMap(m) => promise.complete(Try(m.mapValues(_.value).asInstanceOf[Map[String,A]]))
           case _ => promise.failure(unexpected(result.toString))
         })
@@ -435,7 +435,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    * Call an arbitrary object method on an object
    *
    * Here we require the parameters to be specified as
-   * [[com.tactix4.t4openerp.connector.transport.TransportDataType]]s
+   * [[com.tactix4.t4openerp.connector.transport.OERPType]]s
    * the reason being is as follows:
    *
    * Since we need to use varargs for the parameters it makes it problematic using context bounds
@@ -453,7 +453,7 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
    *
    */
 
-  def callMethod[A](model: String, methodName: String, params: TransportDataType*)  : Future[A] = {
+  def callMethod[A](model: String, methodName: String, params: OERPType*)  : Future[A] = {
 
     config.path = RPCService.RPC_OBJECT
 
@@ -480,5 +480,5 @@ class OpenERPSession(val transportAdaptor: OpenERPTransportAdaptor, val config: 
 object OpenERPSession{
   implicit def IntToListOfInts(i: Int) : List[Int] = List(i)
   implicit def StringToListOfStrings(s: String) : List[String] = List(s)
-  implicit def TupleToListOfTuples (t : (String, TransportDataType)) : List[(String, TransportDataType)] = List(t)
+  implicit def TupleToListOfTuples (t : (String, OERPType)) : List[(String, OERPType)] = List(t)
 }

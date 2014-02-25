@@ -36,7 +36,7 @@ trait OpenERPTransportAdaptor {
    * @param params a list of parameters to supply
    * @return A Future[TransportResponse] containing the response from the server
    */
-  def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: List[TransportDataType]) : Future[TransportResponse]
+  def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: List[OERPType]) : Future[TransportResponse]
   /**
    * send an RPC request over the implementing protocol
    * @param config the [[com.tactix4.t4openerp.connector.transport.OpenERPTransportAdaptorConfig]] to use
@@ -44,7 +44,7 @@ trait OpenERPTransportAdaptor {
    * @param params the parameters to supply
    * @return A Future[TransportResponse] containing the response from the server
    */
-  def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: TransportDataType*) : Future[TransportResponse]= {
+  def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: OERPType*) : Future[TransportResponse]= {
     sendRequest(config, methodName,params.toList)
   }
 }

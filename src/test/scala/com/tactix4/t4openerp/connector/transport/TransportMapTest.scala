@@ -25,9 +25,9 @@ class TransportMapTest extends FunSuite with ShouldMatchers {
   test("Test mapValues on TransportMap"){
 
     val t = TransportMap(Map("one" -> TransportNumber(2), "two" -> TransportNumber(2), "three" -> TransportNumber(3)))
-    val s = t.mapValues((dataType: TransportDataType) => TransportString(dataType.toString))
+    val s = t.mapValues((dataType: OERPType) => TransportString(dataType.toString))
 
-    assert (s.value.forall((v: (String, TransportDataType)) => v._2 match {
+    assert (s.value.forall((v: (String, OERPType)) => v._2 match {
       case x:TransportString => true
       case _ => false
     }))

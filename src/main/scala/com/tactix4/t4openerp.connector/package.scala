@@ -29,7 +29,7 @@ import java.util.Date
 package object connector{
   implicit def pimpAny[T](any: T) = new PimpedAny(any)
 
-  def anyToTDT(t:Any):TransportDataType = t match{
+  def anyToTDT(t:Any):OERPType = t match{
     case x: Int => TransportNumber(x)
     case x: Double => TransportNumber(x)
     case x: Float => TransportNumber(x)
@@ -47,30 +47,30 @@ package object connector{
 
 
   implicit object StringToTDT extends TransportDataConverter[String] {
-    def read(obj: TransportDataType) = obj.toString
+    def read(obj: OERPType) = obj.toString
     def write(obj: String) = TransportString(obj)
 
   }
 
 
   implicit object ListIntToTDT extends TransportDataConverter[List[Int]] {
-    def read(obj:TransportDataType) = ???
-    def write(obj:List[Int]) : TransportDataType = TransportArray(obj.map(TransportNumber(_)))
+    def read(obj:OERPType) = ???
+    def write(obj:List[Int]) : OERPType = TransportArray(obj.map(TransportNumber(_)))
   }
 
   implicit object ListStringToTDT extends TransportDataConverter[List[String]] {
-    def read(obj:TransportDataType) = ???
-    def write(obj:List[String]) : TransportDataType = TransportArray(obj.map(TransportString))
+    def read(obj:OERPType) = ???
+    def write(obj:List[String]) : OERPType = TransportArray(obj.map(TransportString))
 
   }
 
-  implicit object MapStringTransportToTDT extends TransportDataConverter[Map[String,TransportDataType]] {
-    def read(obj:TransportDataType) = ???
-    def write(obj:Map[String,TransportDataType]) : TransportDataType = TransportMap(obj)
+  implicit object MapStringTransportToTDT extends TransportDataConverter[Map[String,OERPType]] {
+    def read(obj:OERPType) = ???
+    def write(obj:Map[String,OERPType]) : OERPType = TransportMap(obj)
   }
 
 
-  type TransportResponse = Either[String,TransportDataType]
+  type TransportResponse = Either[String,OERPType]
 
   type ResultType[A] = List[Map[String,A]]
 

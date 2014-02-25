@@ -31,8 +31,8 @@ import scala.language.implicitConversions
  */
 @implicitNotFound(msg = "Can not find TransportDataConverter for type ${T}")
 trait TransportDataConverter[T] {
-  def read(obj: TransportDataType): T
-  def write(obj: T): TransportDataType
+  def read(obj: OERPType): T
+  def write(obj: T): OERPType
 }
 
 /**
@@ -43,5 +43,5 @@ trait TransportDataConverter[T] {
  * @tparam T
  */
 class PimpedAny[T](any: T) {
-  def toTransportDataType(implicit writer: TransportDataConverter[T]): TransportDataType = implicitly(writer).write(any)
+  def toTransportDataType(implicit writer: TransportDataConverter[T]): OERPType = implicitly(writer).write(any)
 }

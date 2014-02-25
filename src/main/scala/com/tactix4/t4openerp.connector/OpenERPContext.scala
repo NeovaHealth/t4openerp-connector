@@ -65,7 +65,7 @@ object OpenERPContext{
      * @param obj the context to convert
      * @return the TransportDataType representation of a context
      */
-    def write(obj: OpenERPContext): TransportDataType =
+    def write(obj: OpenERPContext): OERPType =
       TransportMap(obj.toMap.map(t => t._1 -> t._2.fold(TransportString, TransportBoolean)))
 
     /**
@@ -73,6 +73,6 @@ object OpenERPContext{
      * @param obj
      * @return
      */
-    def read(obj: TransportDataType): OpenERPContext = ???
+    def read(obj: OERPType): OpenERPContext = ???
 
 }}

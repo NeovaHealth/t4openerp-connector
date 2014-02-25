@@ -49,7 +49,7 @@ class OpenERPConnector(protocol: String, host: String, port: Int, numWorkers: In
     transportClient.sendRequest(config, "list",Nil).onComplete({
       case Success(s) => s.fold(
         (error: String) => promise.failure(new OpenERPException(error)),
-        (result: TransportDataType) => result.value match {
+        (result: OERPType) => result.value match {
           case x:List[_] => promise.success(x.map(_.toString))
           case fail => promise.failure(new OpenERPException("unexpected response in getDatabaseList: " + fail))
         })
@@ -85,7 +85,7 @@ class OpenERPConnector(protocol: String, host: String, port: Int, numWorkers: In
         case Failure(f)    => { logger.error("Login attempt has failed: " + f.getMessage); result.failure(f)}
         case Success(f)    => f.fold(
           (error:String) => result.failure(new OpenERPException(error)),
-          (v: TransportDataType) => v match {
+          (v: OERPType) => v match {
             case _:TransportBoolean => result.failure( new OpenERPAuthenticationException("login failed with username: " + username + " and password: " + password))
             case TransportNumber(i:Int) => {
               val session = new OpenERPSession(transportClient,config,database,i, password)
