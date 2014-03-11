@@ -16,10 +16,8 @@
  */
 
 package com.tactix4.t4openerp.connector
-
-import scala.collection.mutable
 import com.tactix4.t4openerp.connector.transport._
-import com.typesafe.scalalogging.slf4j.Logging
+import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
 
 /**
  * Class to hold the context data used by OpenERP to adjust times and languages as well as to hold other
@@ -29,50 +27,25 @@ import com.typesafe.scalalogging.slf4j.Logging
  * 5/20/13
  */
 
-class OpenERPContext(activeTest: Boolean = true,
-              lang: String,
-              timezone: String) extends mutable.HashMap[String, Either[String,Boolean]] with Logging {
+case class OEContext(activeTest: Boolean = true, lang: String = "en_GB", timezone: String = "Europe/London")
 
-  val ActiveTestTag = "active_test"
-  val TimezoneTag = "tz"
-  val LangTag = "lang"
-
-  setActiveTest(activeTest)
-  setTimeZone(timezone)
-  setLanguage(lang)
-
-  def getActiveTest = get(ActiveTestTag)
-  def getTimeZone = get(TimezoneTag)
-  def getLanguage = get(LangTag)
-
-  def setActiveTest(b: Boolean) ={logger.debug("setting ActiveTest to: " + b); put(ActiveTestTag,Right(b))}
-  def setTimeZone(tz: String) = {logger.debug("setting timezone to: " + tz); put(TimezoneTag, Left(tz))}
-  def setLanguage(l: String) = {logger.debug("setting language to: " + l); put(LangTag, Left(l))}
-
-}
 
 /**
  * Companion object providing an implicit instance of a TransportDataConverter[OpenERPContext]
  */
-object OpenERPContext{
+object OEContext{
+
+  implicit def OEContextToOEType(c: OEContext):OEType = OEContextConverter.encode(c)
 
   /**
    * Implicit object to convert a context to a TransportDataType
    */
-  implicit object OpenERPContextConverter$ extends TransportDataConverter[OpenERPContext]{
+  implicit object OEContextConverter extends OEDataEncoder[OEContext]{
     /**
      * convert to TransportDataType
      * @param obj the context to convert
      * @return the TransportDataType representation of a context
      */
-    def write(obj: OpenERPContext): OERPType =
-      TransportMap(obj.toMap.map(t => t._1 -> t._2.fold(TransportString, TransportBoolean)))
-
-    /**
-     * not implemented
-     * @param obj
-     * @return
-     */
-    def read(obj: OERPType): OpenERPContext = ???
-
+    def encode(obj: OEContext): OEType =
+      OEMap("activeTest" -> obj.activeTest, "lang" -> obj.lang, "timezone" -> obj.timezone)
 }}

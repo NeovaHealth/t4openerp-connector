@@ -17,7 +17,6 @@
 
 package com.tactix4.t4openerp.connector.transport
 
-import scala.concurrent.Future
 import com.tactix4.t4openerp.connector._
 
 /**
@@ -28,23 +27,23 @@ import com.tactix4.t4openerp.connector._
  *         7/10/13
  *
  */
-trait OpenERPTransportAdaptor {
+trait OETransportAdaptor {
   /**
    * send an RPC request over the implementing protocol
-   * @param config the [[com.tactix4.t4openerp.connector.transport.OpenERPTransportAdaptorConfig]] to use
+   * @param config the [[com.tactix4.t4openerp.connector.transport.OETransportConfig]] to use
    * @param methodName the remote method to call
    * @param params a list of parameters to supply
    * @return A Future[TransportResponse] containing the response from the server
    */
-  def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: List[OERPType]) : Future[TransportResponse]
+  def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]) : OEResponse[OEType]
   /**
    * send an RPC request over the implementing protocol
-   * @param config the [[com.tactix4.t4openerp.connector.transport.OpenERPTransportAdaptorConfig]] to use
+   * @param config the [[com.tactix4.t4openerp.connector.transport.OETransportConfig]] to use
    * @param methodName the remote method to call
    * @param params the parameters to supply
    * @return A Future[TransportResponse] containing the response from the server
    */
-  def sendRequest(config: OpenERPTransportAdaptorConfig, methodName: String, params: OERPType*) : Future[TransportResponse]= {
+  def sendRequest(config: OETransportConfig, methodName: String, params: OEType*) : OEResponse[OEType] = {
     sendRequest(config, methodName,params.toList)
   }
 }
@@ -57,5 +56,5 @@ trait OpenERPTransportAdaptor {
  * @param path the path of the host to POST to
  * @param headers optional headers to attach the the outgoing requests
  */
-case class OpenERPTransportAdaptorConfig(protocol: String, host: String, port: Int, var path: String, headers: Map[String, String] = Map())
+case class OETransportConfig(protocol: String, host: String, port: Int, path: String, headers: Map[String, String] = Map())
 

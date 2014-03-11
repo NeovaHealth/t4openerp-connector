@@ -20,9 +20,10 @@ package com.tactix4.t4openerp.connector.domain
 import com.tactix4.t4openerp.connector.transport._
 import com.tactix4.t4openerp.connector._
 import scala.language.implicitConversions
+import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
 
 /**
- * A trait to specify Domains for [[com.tactix4.t4openerp.connector.OpenERPSession]] queries
+ * A trait to specify Domains for [[com.tactix4.t4openerp.connector.OESession]] queries
  *
  * Used in conjunction with the implicits defined in Domains companion object, a DSL for specifying complex
  * domains is provided
@@ -57,7 +58,7 @@ import scala.language.implicitConversions
  *  7/9/13
  */
 
-sealed abstract class Domain {
+sealed trait Domain {
   /**
    * A factory method for the [[com.tactix4.t4openerp.connector.domain.AND]] class
    * @param that the domain to AND with
@@ -108,8 +109,8 @@ case class NOT(value: DomainTuple) extends Domain {
  * @param operator the operator of the filter
  * @param value the value of the filter
  */
-case class DomainTuple(fieldName: String, operator: String, value:OERPType) extends Domain {
-  override def toString = "('" + fieldName + "','" + operator + "','" + value + "')"
+case class DomainTuple(fieldName: String, operator: DomainOperator, value:OEType) extends Domain {
+  override def toString = "('" + fieldName + "','" + operator.op + "','" + value + "')"
 
   /**
    * Factory method for [[com.tactix4.t4openerp.connector.domain.NOT]] class
@@ -118,65 +119,78 @@ case class DomainTuple(fieldName: String, operator: String, value:OERPType) exte
   def NOT = new NOT(this)
 }
 
+sealed abstract class DomainOperator(val op: String)
+case class Equality() extends DomainOperator("=")
+case class Inequality() extends DomainOperator("!=")
+case class LessThan() extends DomainOperator("<")
+case class GreaterThan() extends DomainOperator(">")
+case class Like() extends DomainOperator("like")
+case class Ilike() extends DomainOperator("ilike")
+case class In() extends DomainOperator("in")
+case class NotIn() extends DomainOperator("notIn")
+case class ChildOf() extends DomainOperator("childOf")
+case class ParentLeft() extends DomainOperator("parentLeft")
+case class ParentRight() extends DomainOperator("parentRight")
+
 /**
  * A class used to construct DomainTuples - used via the implicit in the Domain's companion object
  * @param s the fieldName on which to apply the domain filter
  */
-final class DomainOperator(s: String) {
+final class DomainOperators(s: String) {
 
   /**
    * Equality
    * @param n the value of equality we are testing for
    * @return a DomainTuple representing equality
    */
-  def ===(n: OERPType)           = DomainTuple(s, "=", n)
+  def ===(n: OEType)           = DomainTuple(s, Equality(), n)
 
   /**
    * Inequality
    * @param n the value of inequality we are testing for
    * @return a DomainTuple representing inequality
    */
-  def =/=(n: OERPType)           = DomainTuple(s, "!=", n)
+  def =/=(n: OEType)           = DomainTuple(s, Inequality(), n)
 
   /**
    * LessThan
    * @param n the value which we are asserting is LessThan `this`
    * @return a DomainTuple representing a LessThan domain filter
    */
-  def lt(n: OERPType)            = DomainTuple(s, "<", n)
+  def lt(n: OEType)            = DomainTuple(s, LessThan(), n)
   /**
    * GreaterThan
    * @param n the value which we are asserting is GreaterThan `this`
    * @return a DomainTuple representing a GreaterThan domain filter
    */
-  def gt(n: OERPType)            = DomainTuple(s, ">", n)
+  def gt(n: OEType)            = DomainTuple(s, GreaterThan(), n)
 
   /**
    * Like
    * @param n the value which `this` is like
    * @return a DomainTuple representing an SQLish like pattern match
    */
-  def like(n: OERPType)          = DomainTuple(s, "like", n)
+  def like(n: OEType)          = DomainTuple(s, Like(), n)
 
   /**
    * Case insensitive Like
    * @param n the value which `this` is like
    * @return a DomainTuple representing an SQLish like pattern match - case insensitive
    */
-  def ilike(n: OERPType)         = DomainTuple(s, "ilike", n)
+  def ilike(n: OEType)         = DomainTuple(s, Ilike(), n)
 
   /**
    * In
    * @param n a list or tuple that the value of `this` should be in
    * @return a DomainTuple representing a test for s being in n
    */
-  def in(n: OERPType)            = DomainTuple(s, "in", n)
+  def in(n: OEType)            = DomainTuple(s, In(), n)
   /**
    * Not In
    * @param n a list or tuple that the value of `this` should not be in
    * @return a DomainTuple representing a test for s not being in n
    */
-  def not_in(n: OERPType)        = DomainTuple(s, "not in", n)
+  def not_in(n: OEType)        = DomainTuple(s, NotIn(), n)
 
   /**
    * Child Of
@@ -185,7 +199,7 @@ final class DomainOperator(s: String) {
    * @param n the parent of `this`
    * @return a DomainTuple representing a test for a child_of relationship
    */
-  def child_of(n: OERPType)      = DomainTuple(s, "child_of", n)
+  def child_of(n: OEType)      = DomainTuple(s, ChildOf(), n)
 
   /**
    * parent left
@@ -193,14 +207,14 @@ final class DomainOperator(s: String) {
    * @param n the subject being tested for being a child of `this`
    * @return a DomainTuple representing a test for a parent_left relationship
    */
-  def parent_left(n: OERPType)   = DomainTuple(s, "parent_left", n)
+  def parent_left(n: OEType)   = DomainTuple(s, ParentLeft(), n)
   /**
    * parent right
    * @see [[http://stackoverflow.com/questions/11861436/parent-left-and-parent-right-in-openerp]]
    * @param n the subject being tested for being a child of `this`
    * @return a DomainTuple representing a test for a parent_right relationship
    */
-  def parent_right(n: OERPType)  = DomainTuple(s, "parent_right", n)
+  def parent_right(n: OEType)  = DomainTuple(s, ParentRight(), n)
 }
 
 /**
@@ -210,7 +224,7 @@ final class DomainOperator(s: String) {
 object Domain {
 
   /**
-   * Implicit to convert a Domain to an Option[Domain], used to clarify request parameters in [[com.tactix4.t4openerp.connector.OpenERPSession]]
+   * Implicit to convert a Domain to an Option[Domain], used to clarify request parameters in [[com.tactix4.t4openerp.connector.OESession]]
    * @param d the Domain
    * @return an Option[d]
    */
@@ -222,26 +236,24 @@ object Domain {
    * @param s the string which goes on to represent the fieldName of a DomainTuple
    * @return a DomainOperator
    */
-  implicit def StringToDomainOperator(s: String): DomainOperator = new DomainOperator(s)
+  implicit def StringToDomainOperator(s: String): DomainOperators = new DomainOperators(s)
 
 
   /**
-   * Provides the TransportDataConverter[Domain] implementation which enables the [[com.tactix4.t4openerp.connector.transport.PimpedAny]]
+   * Provides the OEDataWriter[Domain] implementation which enables the [[com.tactix4.t4openerp.connector.transport.PimpedAny]]
    * call to .toTransportDataType()
    */
-  implicit object DomainToTransportData extends TransportDataConverter[Domain]{
-    //TODO: make tail recursive
-    def write(obj: Domain): OERPType = {
-      def loop(tree: Domain): List[OERPType] =
-        tree match {
-          case e: AND => TransportString("&") :: loop(e.left) ++ loop(e.right)
-          case e: OR => TransportString("|") :: loop(e.left) ++ loop(e.right)
-          case e: NOT => TransportString("!") :: TransportArray(List(TransportString(e.value.fieldName), TransportString(e.value.operator), e.value.value)) :: Nil
-          case e: DomainTuple => TransportArray(List(TransportString(e.fieldName), TransportString(e.operator), e.value)) :: Nil
+  implicit val DomainToTransportData  = OEDataEncoder[Domain]{ obj =>
+      def loopTR(tree:List[Domain])(acc:List[OEType]) : List[OEType] = {
+        tree match{
+          case Nil => acc.reverse
+          case (e:DomainTuple)::rs => loopTR(rs)(OEArray(List(e.fieldName, e.operator.op, e.value)) :: acc)
+          case (e:AND)::rs => loopTR(e.left :: e.right :: rs)("&" :: acc)
+          case (e:OR)::rs => loopTR(e.left :: e.right :: rs)("|" :: acc)
+          case (e:NOT)::rs => loopTR(rs)("!" :: acc)
         }
-      TransportArray(loop(obj))
-    }
-     def read(obj: OERPType) = ??? //not needed
+      }
+      OEArray(loopTR(List(obj))(Nil))
    }
 }
 

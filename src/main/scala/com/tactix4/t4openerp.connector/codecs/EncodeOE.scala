@@ -15,11 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.tactix4.t4openerp.connector.transport
+package com.tactix4.t4openerp.connector.codecs
 
 import scala.annotation.implicitNotFound
 
 import scala.language.implicitConversions
+import com.tactix4.t4openerp.connector.transport.OEType
+
 /**
  *
  * Typeclass for converting to-from the transport data type
@@ -29,19 +31,32 @@ import scala.language.implicitConversions
  * @author max@tactix4.com
  *         24/08/2013
  */
-@implicitNotFound(msg = "Can not find TransportDataConverter for type ${T}")
-trait TransportDataConverter[T] {
-  def read(obj: OERPType): T
-  def write(obj: T): OERPType
+@implicitNotFound(msg = "Can not find OEDataConverter for type ${T}")
+trait OEDataConverter[T] extends OEDataDecoder[T] with OEDataEncoder[T]
+
+@implicitNotFound(msg = "Can not find OEDataDecoder for type ${T}")
+trait OEDataDecoder[T]{
+  def decode(obj: OEType): DecodeResult[T]
 }
 
-/**
- *
- * The PimpedAny simply provides a toTransportDataType convenience method
- *
- * @param any
- * @tparam T
- */
-class PimpedAny[T](any: T) {
-  def toTransportDataType(implicit writer: TransportDataConverter[T]): OERPType = implicitly(writer).write(any)
+trait OEDataEncoder[T]{
+  def encode(obj: T): OEType
+}
+object OEDataDecoder {
+  def apply[T](r: OEType => DecodeResult[T]) : OEDataDecoder[T] = new OEDataDecoder[T] {
+    def decode(obj: OEType): DecodeResult[T] = r(obj)
+  }
+}
+object OEDataEncoder{
+  def apply[T](r: T => OEType) : OEDataEncoder[T] = new OEDataEncoder[T] {
+    def encode(obj: T): OEType = r(obj)
+  }
+}
+
+class EncodeOps[T:OEDataEncoder](any: T) {
+  def encode: OEType = implicitly[OEDataEncoder[T]].encode(any)
+}
+class DecodeOps(any: OEType) {
+   def decodeAs[T:OEDataDecoder] : DecodeResult[T] = implicitly[OEDataDecoder[T]].decode(any)
+
 }

@@ -6,6 +6,8 @@
         </encoder>
     </appender>
 
+    <logger name="com.tactix4.t4xmlrpc" level="debug"/>
+
     <root level="error">
         <appender-ref ref="STDOUT" />
     </root>

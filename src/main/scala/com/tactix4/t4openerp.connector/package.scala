@@ -19,65 +19,42 @@ package com.tactix4.t4openerp
 
 import scala.language.implicitConversions
 import com.tactix4.t4openerp.connector.transport._
-import com.tactix4.t4openerp.connector.transport.PimpedAny
-import java.util.Date
+import scalaz._
+import Scalaz._
+import com.tactix4.t4openerp.connector.codecs._
+import com.tactix4.t4openerp.connector.transport.OENumber
+import com.tactix4.t4openerp.connector.transport.OEBoolean
+import com.tactix4.t4openerp.connector.transport.OEString
 
 /**
  * @author max@tactix4.com
  *         14/07/2013
  */
 package object connector{
-  implicit def pimpAny[T](any: T) = new PimpedAny(any)
+  implicit def pimpEncoder[T:OEDataEncoder](any: T) = new EncodeOps[T](any)
+  implicit def pimpDecoder(any: OEType) = new DecodeOps(any)
 
-  def anyToTDT(t:Any):OERPType = t match{
-    case x: Int => TransportNumber(x)
-    case x: Double => TransportNumber(x)
-    case x: Float => TransportNumber(x)
-    case x: Long => TransportNumber(x)
-    case x: Char  => TransportNumber(x)
-    case x: Short => TransportNumber(x)
-    case x: Boolean => TransportBoolean(x)
-    case x: Unit => TransportNull
-    case x: String => TransportString(x)
-    case x: Map[_,_] => TransportMap(x.map(v => v._1.toString -> anyToTDT(v._2)))
-    case x: Set[_] => TransportArray(x.toList.map(anyToTDT))
-    case x: Seq[_] => TransportArray(x.toList.map(anyToTDT))
-    case x  => TransportString(x.toString)
-  }
+  type ErrorMessage = String
+  type Id = Int
 
+  type OEResponse[A] = FutureResponse[ErrorMessage,A]
 
-  implicit object StringToTDT extends TransportDataConverter[String] {
-    def read(obj: OERPType) = obj.toString
-    def write(obj: String) = TransportString(obj)
+  implicit def stringsToOERPArray(ss:List[String]) = OEArray(ss.map(OEString.apply))
+  implicit def idsToOERPArray(is:List[Id]) = OEArray(is.map(i => OENumber(i)))
+  implicit def stringToOERPString(s:String) = OEString(s)
+  implicit def booleanToOERPBoolean(b:Boolean)= OEBoolean(b)
+  implicit def intToOERPNumber(i:Int)= OENumber(i)
+  implicit def doubleToOERPNumber(d:Double)= OENumber(d)
 
-  }
+  implicit val stringDecoder = OEDataDecoder[String]((t: OEType) => DecodeResult(t.string.map(_.right[ErrorMessage]) | (s"Not String: $t").left[String]))
+  implicit val intDecoder = OEDataDecoder[Int]((t: OEType) => DecodeResult(t.int.map(_.right[ErrorMessage]) | (s"Not Int: $t").left[Int]))
+  implicit val doubleDecoder = OEDataDecoder[Double]((t: OEType) => DecodeResult(t.double.map(_.right[ErrorMessage]) | (s"Not Double: $t").left[Double]))
+  implicit val boolDecoder = OEDataDecoder[Boolean]((t: OEType) => DecodeResult(t.bool.map(_.right[ErrorMessage]) | (s"Not Boolean: $t").left[Boolean]))
 
 
-  implicit object ListIntToTDT extends TransportDataConverter[List[Int]] {
-    def read(obj:OERPType) = ???
-    def write(obj:List[Int]) : OERPType = TransportArray(obj.map(TransportNumber(_)))
-  }
+  implicit val stringEncoder = OEDataEncoder[String]((s: String) => OEString(s))
+  implicit val intEncoder = OEDataEncoder[Int]((i: Int) => OENumber(i))
+  implicit val doubleEncoder = OEDataEncoder[Double]((d: Double) => OENumber(d))
+  implicit val boolEncoder = OEDataEncoder[Boolean]((b: Boolean) => OEBoolean(b))
 
-  implicit object ListStringToTDT extends TransportDataConverter[List[String]] {
-    def read(obj:OERPType) = ???
-    def write(obj:List[String]) : OERPType = TransportArray(obj.map(TransportString))
-
-  }
-
-  implicit object MapStringTransportToTDT extends TransportDataConverter[Map[String,OERPType]] {
-    def read(obj:OERPType) = ???
-    def write(obj:Map[String,OERPType]) : OERPType = TransportMap(obj)
-  }
-
-
-  type TransportResponse = Either[String,OERPType]
-
-  type ResultType[A] = List[Map[String,A]]
-
-
-  implicit def StringToTransportString(s: String) = new TransportString(s)
-  implicit def BoolToTransportBool(b:Boolean) = new TransportBoolean(b)
-  implicit def IntToTransportNumber(i: Int) = new TransportNumber(i)
-  implicit def FloatToTransportNumber(i: Float) = new TransportNumber(i)
-  implicit def DoubleToTransportNumber(i: Double) = new TransportNumber(i)
 }
