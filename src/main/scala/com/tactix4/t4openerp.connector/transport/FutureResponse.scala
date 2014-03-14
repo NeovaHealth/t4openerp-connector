@@ -4,7 +4,7 @@ import com.tactix4.t4openerp.connector._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz._
-
+import scala.language.implicitConversions
 
 case class FutureResponse[E,A](value:Future[E \/ A]){
 

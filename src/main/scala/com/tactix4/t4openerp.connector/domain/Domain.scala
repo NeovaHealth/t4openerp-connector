@@ -246,9 +246,9 @@ object Domain {
   implicit val DomainToTransportData  = OEDataEncoder[Domain]{ obj =>
       def loopTR(tree:List[Domain])(acc:List[OEType]) : List[OEType] = {
         tree match{
-          case Nil => acc.reverse
-          case (e:DomainTuple)::rs => loopTR(rs)(OEArray(List(e.fieldName, e.operator.op, e.value)) :: acc)
-          case (e:AND)::rs => loopTR(e.left :: e.right :: rs)("&" :: acc)
+          case Nil => acc
+          case (e:DomainTuple)::rs => loopTR(rs)(OEArray(List(e.value, e.operator.op, e.fieldName)) :: acc)
+          case (e:AND)::rs => loopTR(e.left :: e.right :: rs)("&amp;" :: acc)
           case (e:OR)::rs => loopTR(e.left :: e.right :: rs)("|" :: acc)
           case (e:NOT)::rs => loopTR(rs)("!" :: acc)
         }

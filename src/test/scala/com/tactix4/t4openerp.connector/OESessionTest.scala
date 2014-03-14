@@ -7,7 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import com.tactix4.t4openerp.connector.domain.Domain._
 import com.tactix4.t4openerp.connector.transport.OEMap
-import com.tactix4.t4openerp.connector.codecs.{GeneratedDecodeOETEST, OEDataEncoder, GeneratedDecodeOE, OEDataDecoder}
+import com.tactix4.t4openerp.connector.codecs._
 
 /**
  * Created with IntelliJ IDEA.
@@ -130,7 +130,7 @@ class OESessionTest extends FunSuite{
 
   test("Search and read the res.partner table with a domain and fields") {
 
-    val result =  session.searchAndRead("res.partner", ("email" ilike "info@") OR (("is_company" =/= true)), List("category_id"), limit = 10)
+    val result =  session.searchAndRead("res.partner", ("email" ilike "info@") OR ("is_company" =/= true), List("category_id"), limit = 10)
 
     val wait = result.failMap(f => fail(s"Failed to search and read: $f"))
 
@@ -158,8 +158,8 @@ class OESessionTest extends FunSuite{
 
   test("Update partner in res.partner") {
 
-   val result = for {
-       ids <- session.search("res.partner", "name" === "McLovin")
+    val result = for {
+      ids <- session.search("res.partner", "name" === "McLovin")
       r <- session.write("res.partner",ids, Map("name" -> "McLovinUpdated"))
     } yield  r
 
@@ -189,36 +189,13 @@ class OESessionTest extends FunSuite{
     Await.result(result.value, 3 seconds)
   }
   test("Find Person with fields") {
-    val result = session.searchAndRead("res.partner", "name" =/= false AND "city" =/= false, List("name"), limit = 1).biMap(
+    val result = session.searchAndRead("res.partner", "name" =/= false AND "email" =/= false AND "id" =/= false, List("email", "id", "name")).biMap(
       m => fail(s"Something went wrong: $m"),
       b => println(s"Hurrah!: $b")
     )
     Await.result(result.value, 3 seconds)
   }
 
-  test("Test decoding"){
-    import GeneratedDecodeOE._
-    import GeneratedDecodeOETEST._
-    case class Person(id:Id, name:String, city:String, function:String)
 
-    implicit val DecodePerson: OEDataDecoder[Person] =
-        decode4M(Person(_:Id, _:String,_:String, _:String))("id", "name", "city","function")
-
-    implicit val personEncode :OEDataEncoder[Person] =
-        encode4M((p:Person) => (p.id,p.name,p.city,p.function))("id","name","city","function")
-
-
-    val p = Person(10,"James","London","Chief")
-    val e = p.encode
-
-
-    val result = session.searchAndRead("res.partner","name" ilike "James", List("name", "city","function")).biMap(
-      (message: ErrorMessage) => fail(message),
-      (records: List[OEMap]) => println(records.map( m => m.decodeAs[Person]))
-    )
-
-    Await.result(result.value, 3 seconds)
-
-  }
 
 }

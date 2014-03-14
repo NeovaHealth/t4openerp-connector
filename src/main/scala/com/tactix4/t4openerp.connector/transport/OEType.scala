@@ -50,6 +50,15 @@ sealed trait OEType{
       case OENull         => oerpNull(null)
     }
 
+  override def toString: String = this match{
+    case OEBoolean(b)   => b.toString
+    case OENumber(n)    => n.toString
+    case OEString(s)    => s.toString
+    case a:OEArray      => a.value.toString
+    case m:OEMap        => m.value.toString
+    case OENull         => OENull.toString
+  }
+
 
   def bool : Option[Boolean]                = this.fold(b => Some(b),_=>None,_=>None,_=>None,_=>None,_=>None)
   def number : Option[BigDecimal]           = this.fold(_ => None,n=> Some(n),_=>None,_=>None,_=>None,_=>None)

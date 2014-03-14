@@ -26,6 +26,7 @@ import scalaz._
 import Scalaz._
 import ExecutionContext.Implicits.global
 import com.tactix4.t4openerp.connector.codecs.{DecodeResult, OEDataConverter}
+import scala.language.implicitConversions
 
 /**
  * Implementation of the OpenERPOERPAdaptor and TransportDataConverter

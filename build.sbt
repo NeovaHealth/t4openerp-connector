@@ -3,7 +3,7 @@ name := "t4openerp-connector"
 
 organization:= "com.tactix4"
 
-version := "1.2-SNAPSHOT"
+version := "2.0-SNAPSHOT"
 
 scalaVersion := "2.10.3"
 

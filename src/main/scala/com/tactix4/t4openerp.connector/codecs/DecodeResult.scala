@@ -19,6 +19,8 @@ case class DecodeResult[A](result: ErrorMessage\/A) {
     value: A => X
   ): X = result.fold(m => failure(m) , value)
 
+  def getOrElse(e: A) : A = result.getOrElse(e)
+
   def map[B](f: A => B) : DecodeResult[B] = DecodeResult(result map f)
 
   def flatMap[B](f: A => DecodeResult[B]) : DecodeResult[B] = result.fold(m => DecodeResult(m.left[B]),f)

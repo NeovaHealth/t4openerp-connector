@@ -18,6 +18,8 @@
 package com.tactix4.t4openerp.connector
 import com.tactix4.t4openerp.connector.transport._
 import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
+import com.tactix4.t4openerp.connector.codecs.GeneratedEncodeOE._
+import scala.language.implicitConversions
 
 /**
  * Class to hold the context data used by OpenERP to adjust times and languages as well as to hold other
@@ -35,17 +37,9 @@ case class OEContext(activeTest: Boolean = true, lang: String = "en_GB", timezon
  */
 object OEContext{
 
-  implicit def OEContextToOEType(c: OEContext):OEType = OEContextConverter.encode(c)
+  implicit def OEContextToOEType(c: OEContext):OEType = c.encode
+  implicit val oeContextEncoder = encode3M((c: OEContext) => (c.activeTest,c.lang,c.timezone))("activeTest","lang","timezone")
+}
 
-  /**
-   * Implicit object to convert a context to a TransportDataType
-   */
-  implicit object OEContextConverter extends OEDataEncoder[OEContext]{
-    /**
-     * convert to TransportDataType
-     * @param obj the context to convert
-     * @return the TransportDataType representation of a context
-     */
-    def encode(obj: OEContext): OEType =
-      OEMap("activeTest" -> obj.activeTest, "lang" -> obj.lang, "timezone" -> obj.timezone)
-}}
+
+
