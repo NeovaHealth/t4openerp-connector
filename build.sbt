@@ -47,5 +47,6 @@ OsgiKeys.exportPackage ++= Seq(
     "com.tactix4.t4openerp.connector.domain",
     "com.tactix4.t4openerp.connector.exception",
     "com.tactix4.t4openerp.connector.field",
-    "com.tactix4.t4openerp.connector.transport"
+    "com.tactix4.t4openerp.connector.transport",
+    "com.tactix4.t4openerp.connector.codecs"
 )
