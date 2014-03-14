@@ -23,7 +23,7 @@ libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % "7.0.5",
   "com.typesafe" %% "scalalogging-slf4j" % "1.0.1",
   "com.typesafe" % "config" % "1.0.2",
-  "com.tactix4" %% "t4xmlrpc" % "2.0",
+  "com.tactix4" %% "t4xmlrpc" % "2.0-SNAPSHOT",
   "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
   "org.scalatest" %% "scalatest" % "2.0.RC1" % "test",
   "ch.qos.logback" % "logback-classic" % "1.0.9" % "test"
