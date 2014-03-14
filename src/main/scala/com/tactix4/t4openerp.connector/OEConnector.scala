@@ -18,10 +18,13 @@
 package com.tactix4.t4openerp.connector
 
 import com.tactix4.t4openerp.connector.transport._
+
 import com.typesafe.scalalogging.slf4j.Logging
-import scala.language.implicitConversions
+
 import scalaz._
 import Scalaz._
+
+import scala.language.implicitConversions
 
 /**
  * Entry point into library and used to create an OpenERPSession
@@ -74,15 +77,8 @@ class OEConnector(protocol: String, host: String, port: Int) extends Logging {
 
     val uid = transportClient.sendRequest(conf, "login", database, username, password).fold(
           (error:String) => error.left[Int])(
-          (v: OEType) => {
-            if(v.isBool) s"login failed with username: $username and password: $password".left
-            else if(v.isNumber){
-              (~v.int).right[ErrorMessage]
-            }
-            else{
-              s"Unexpected response from server: $v".left[Int]
-            }
-          })
+          (v: OEType) =>  v.int.fold(s"Login failed: $v".left[Int])(_.right[ErrorMessage])
+          )
 
     OESession(uid,transportClient,config,database,password,context|OEContext())
   }

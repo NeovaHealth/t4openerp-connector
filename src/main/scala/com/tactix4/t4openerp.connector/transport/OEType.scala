@@ -84,6 +84,7 @@ case class OEString(value: String) extends OEType
 class OEArray(val value: List[OEType]) extends OEType
 object OEArray{
   def apply(l:List[OEType]) : OEArray = new OEArray(l)
+  def apply(l:OEType*) : OEArray = new OEArray(l.toList)
   def unapplySeq(a: OEArray) : Option[List[OEType]] = Some(a.value)
 }
 class OEMap(val value: Map[String, OEType]) extends OEType

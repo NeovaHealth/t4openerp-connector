@@ -1,5 +1,7 @@
-name := "t4openerp-connector"
+import com.typesafe.sbt.osgi.OsgiKeys
+import com.typesafe.sbt.osgi.SbtOsgi.osgiSettings
 
+name := "t4openerp-connector"
 
 organization:= "com.tactix4"
 
@@ -24,8 +26,7 @@ libraryDependencies ++= Seq(
   "com.tactix4" %% "t4xmlrpc" % "2.0",
   "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
   "org.scalatest" %% "scalatest" % "2.0.RC1" % "test",
-  "ch.qos.logback" % "logback-classic" % "1.0.9" % "test",
-  "org.scalaz" %% "scalaz-scalacheck-binding" % "7.0.5" % "test"
+  "ch.qos.logback" % "logback-classic" % "1.0.9" % "test"
 )
 
 initialCommands in console := "import scalaz._, Scalaz._, com.tactix4.t4openerp.connector._,com.tactix4.t4openerp.connector.transport._,com.tactix4.t4openerp.connector.domain._"

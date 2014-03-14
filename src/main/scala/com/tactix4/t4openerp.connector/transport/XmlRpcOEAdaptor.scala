@@ -18,14 +18,13 @@
 package com.tactix4.t4openerp.connector.transport
 
 import com.tactix4.t4xmlrpc._
-import com.typesafe.scalalogging.slf4j.Logging
-import scala.concurrent.{ExecutionContext, Promise, Future}
-import scala.util.{Failure, Success}
 import com.tactix4.t4openerp.connector._
-import scalaz._
-import Scalaz._
-import ExecutionContext.Implicits.global
-import com.tactix4.t4openerp.connector.codecs.{DecodeResult, OEDataConverter}
+
+import com.typesafe.scalalogging.slf4j.Logging
+
+import scalaz.syntax.id._
+
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 
 /**

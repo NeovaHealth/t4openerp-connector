@@ -22,6 +22,7 @@ import com.tactix4.t4openerp.connector.domain.Domain
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.language.implicitConversions
 import scala.concurrent.Future
+
 import scalaz._
 import Scalaz._
 

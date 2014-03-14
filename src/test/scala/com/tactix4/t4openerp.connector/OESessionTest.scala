@@ -1,13 +1,14 @@
 package com.tactix4.t4openerp.connector
 
-import com.typesafe.config._
-import org.scalatest.FunSuite
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.language.postfixOps
+
 import com.tactix4.t4openerp.connector.domain.Domain._
-import com.tactix4.t4openerp.connector.transport.OEMap
-import com.tactix4.t4openerp.connector.codecs._
+import com.typesafe.config._
+import com.typesafe.scalalogging.slf4j.Logging
+import org.scalatest.FunSuite
 
 /**
  * Created with IntelliJ IDEA.
@@ -16,7 +17,7 @@ import com.tactix4.t4openerp.connector.codecs._
  * Time: 15:55
  * To change this template use File | Settings | File Templates.
  */
-class OESessionTest extends FunSuite{
+class OESessionTest extends FunSuite with Logging{
 
  val conf = ConfigFactory.load()
 
@@ -32,24 +33,24 @@ class OESessionTest extends FunSuite{
 
   test("Invalid host returns error"){
     val newSession = new OEConnector("http","myfakehostthatdoesntexist.com",1).startSession(username,password,database)
-    newSession.uid.biMap(m => println(s"Hurrah, we got an error: $m"), _ => fail("Should not be logged in"))
+    newSession.uid.biMap(m => logger.debug(s"Hurrah, we got an error: $m"), _ => fail("Should not be logged in"))
     Await.result(newSession.uid.value, 10 seconds)
   }
   test("Invalid port/port closed returns error"){
     val newSession = new OEConnector("http","localhost",63999).startSession(username,password,database)
-    newSession.uid.biMap(m => println(s"Hurrah, we got an error: $m"), _ => fail("Should not be logged in"))
+    newSession.uid.biMap(m => logger.debug(s"Hurrah, we got an error: $m"), _ => fail("Should not be logged in"))
     Await.result(newSession.uid.value, 10 seconds)
   }
   test("Invalid protocol returns error"){
     val newSession = new OEConnector("httpz","localhost",63999).startSession(username,password,database)
-    newSession.uid.biMap(m => println(s"Hurrah, we got an error: $m"), _ => fail("Should not be logged in"))
+    newSession.uid.biMap(m => logger.debug(s"Hurrah, we got an error: $m"), _ => fail("Should not be logged in"))
     Await.result(newSession.uid.value, 10 seconds)
   }
   test("Incorrect username returns error"){
     val newSession = new OEConnector("http",openerpHost,openerpPort).startSession(username+"fail",password,database)
     newSession.uid.biMap(
       m =>{
-        println(s"Hurrah, we got an error: $m")
+        logger.debug(s"Hurrah, we got an error: $m")
         newSession.isLoggedIn.map(b => assert(b))
       },
       _ => fail("Should not be logged in"))
@@ -60,7 +61,7 @@ class OESessionTest extends FunSuite{
     val newSession = new OEConnector("http",openerpHost,openerpPort).startSession(username,password+"fail",database)
     newSession.uid.biMap(
       m =>{
-        println(s"Hurrah, we got an error: $m")
+        logger.debug(s"Hurrah, we got an error: $m")
         newSession.isLoggedIn.map(b => assert(b))
       },
       _ => fail("Should not be logged in"))
@@ -71,7 +72,7 @@ class OESessionTest extends FunSuite{
     val newSession = new OEConnector("http",openerpHost,openerpPort).startSession(username,password,database+"fail")
     newSession.uid.biMap(
       m =>{
-        println(s"Hurrah, we got an error: $m")
+        logger.debug(s"Hurrah, we got an error: $m")
         newSession.isLoggedIn.map(b => assert(b))
       },
       _ => fail("Should not be logged in"))
@@ -80,7 +81,7 @@ class OESessionTest extends FunSuite{
   test("Invalid table returns error") {
     val ids = session.search("res.partnerzoid", domain="name" ilike "peter")
     val wait = ids.biMap(
-      error => println(s"Hurrah we got a: $error" ),
+      error => logger.debug(s"Hurrah we got a: $error" ),
       ids   => fail("We should have got an error"))
 
     Await.result(wait.value, 2 seconds)
@@ -90,7 +91,7 @@ class OESessionTest extends FunSuite{
     val ids = session.search("res.partner", domain="fieldThatDoesntExist" ilike "peter")
 
     val wait = ids.biMap(
-      error => println(s"Hurrah we got a: $error" ),
+      error => logger.debug(s"Hurrah we got a: $error" ),
       ids   => fail("We should have got an error")
     )
 
@@ -100,7 +101,7 @@ class OESessionTest extends FunSuite{
     val ids = session.search("res.partner", domain="name" ilike "peter")
     val wait = ids.biMap(
       error => fail(s"That didn't work: $error" ),
-      ids   => println(ids))
+      ids   => logger.debug(ids.toString))
 
 
     Await.result(wait.value, 2 seconds)
@@ -110,7 +111,7 @@ class OESessionTest extends FunSuite{
   test("Read from res.partner table") {
     val result = session.read("res.partner", List(16))
 
-    val wait = result.biMap(e => println(s"Something went wrong: $e"), l => l.head.value.toList foreach println)
+    val wait = result.biMap(e => logger.debug(s"Something went wrong: $e"), l => logger.debug(l.toString))
 
     Await.result(wait.value, 2 seconds)
   }
@@ -121,7 +122,7 @@ class OESessionTest extends FunSuite{
 
     val wait = result.biMap(
       e => fail(s"Something went wrong: $e"),
-      l => println("Search and read result: " +l))
+      l => logger.debug("Search and read result: " +l))
 
     Await.result(wait.value, 2 seconds)
   }
@@ -174,7 +175,7 @@ class OESessionTest extends FunSuite{
       r <- session.unlink("res.partner",ids)
     } yield r
 
-    val wait =  result.biMap(m => fail(s"Something went wrong: $m"),(b: Boolean) => println("Hurrah"))
+    val wait =  result.biMap(m => fail(s"Something went wrong: $m"),(b: Boolean) => logger.debug("Hurrah"))
 
     Await.result(wait.value, 3 seconds)
   }
@@ -183,7 +184,7 @@ class OESessionTest extends FunSuite{
 
     val result = session.callMethod("res.partner","read", 1).biMap(
       m => fail(s"Something went wrong: $m"),
-      b => println("Hurrah!")
+      b => logger.debug("Hurrah!")
     )
 
     Await.result(result.value, 3 seconds)
@@ -191,7 +192,7 @@ class OESessionTest extends FunSuite{
   test("Find Person with fields") {
     val result = session.searchAndRead("res.partner", "name" =/= false AND "email" =/= false AND "id" =/= false, List("email", "id", "name")).biMap(
       m => fail(s"Something went wrong: $m"),
-      b => println(s"Hurrah!: $b")
+      b => logger.debug(s"Hurrah!: $b")
     )
     Await.result(result.value, 3 seconds)
   }

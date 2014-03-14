@@ -247,7 +247,7 @@ object Domain {
       def loopTR(tree:List[Domain])(acc:List[OEType]) : List[OEType] = {
         tree match{
           case Nil => acc
-          case (e:DomainTuple)::rs => loopTR(rs)(OEArray(List(e.value, e.operator.op, e.fieldName)) :: acc)
+          case (e:DomainTuple)::rs => loopTR(rs)(OEArray(e.value, e.operator.op, e.fieldName) :: acc)
           case (e:AND)::rs => loopTR(e.left :: e.right :: rs)("&amp;" :: acc)
           case (e:OR)::rs => loopTR(e.left :: e.right :: rs)("|" :: acc)
           case (e:NOT)::rs => loopTR(rs)("!" :: acc)

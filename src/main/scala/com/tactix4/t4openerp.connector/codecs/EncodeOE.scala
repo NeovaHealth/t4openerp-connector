@@ -17,10 +17,10 @@
 
 package com.tactix4.t4openerp.connector.codecs
 
-import scala.annotation.implicitNotFound
-
-import scala.language.implicitConversions
 import com.tactix4.t4openerp.connector.transport.OEType
+
+import scala.annotation.implicitNotFound
+import scala.language.implicitConversions
 
 /**
  *
@@ -38,7 +38,7 @@ trait OEDataConverter[T] extends OEDataDecoder[T] with OEDataEncoder[T]
 trait OEDataDecoder[T]{
   def decode(obj: OEType): DecodeResult[T]
 }
-
+@implicitNotFound(msg = "Can not find OEDataEncoder for type ${T}")
 trait OEDataEncoder[T]{
   def encode(obj: T): OEType
 }
@@ -50,6 +50,13 @@ object OEDataDecoder {
 object OEDataEncoder{
   def apply[T](r: T => OEType) : OEDataEncoder[T] = new OEDataEncoder[T] {
     def encode(obj: T): OEType = r(obj)
+  }
+}
+
+object OEDataConverter{
+  def apply[T](r1: OEType => DecodeResult[T])(r2: T => OEType) : OEDataConverter[T] = new OEDataConverter[T] {
+    override def decode(obj: OEType): DecodeResult[T] = r1(obj)
+    override def encode(obj: T): OEType = r2(obj)
   }
 }
 

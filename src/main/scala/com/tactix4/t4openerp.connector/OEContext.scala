@@ -17,7 +17,6 @@
 
 package com.tactix4.t4openerp.connector
 import com.tactix4.t4openerp.connector.transport._
-import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
 import com.tactix4.t4openerp.connector.codecs.GeneratedEncodeOE._
 import scala.language.implicitConversions
 
