@@ -40,6 +40,8 @@ object Boilerplate {
 
   def tuples(arity: Int): String = (1 to arity).map(n => "%sn -> t._%d.encode".format(arityChars(n).toLower, n)).mkString(", ")
 
+  def encodeTupleValues(arity: Int): String = (1 to arity).map(n => "t._%d.encode".format(n)).mkString(", ")
+
   def jsonStringParamNames(arity: Int): String = (1 to arity).map(n => "%sn".format(arityChars(n).toLower)).mkString(", ")
 
  def genEncodeOE = {
@@ -48,8 +50,12 @@ object Boilerplate {
     def content = {
       val encode1M =
         """|
+          |
           | def encode1M[A:OEDataEncoder,X](f: X => A)(an: String): OEDataEncoder[X] =
-          |     OEDataEncoder[X](x => OEMap(an -> f(x) map (_.encode)))
+          |   OEDataEncoder[X](x => {
+          |     val t = f(x).encode
+          |     t.map(e => OEMap(an -> e) )
+          |   })
           | """.stripMargin
 
 
@@ -59,14 +65,16 @@ object Boilerplate {
             |  def encode%sM[%s, X](f: X => (%s))(%s): OEDataEncoder[X] =
             |     OEDataEncoder[X](x => {
             |       val t = f(x)
-            |       OEMap(%s)
+            |       val e = List(%s).sequence[CodecResult,OEType]
+            |       e.map(l => OEMap(List(%s) zip l toMap))
             |     })
             | """.format(
             arity,
             encodeOEContextArities(arity),
             functionTypeParameters(arity),
             jsonStringParams(arity),
-            tuples(arity)
+            encodeTupleValues(arity),
+            jsonStringParamNames(arity)
           ).stripMargin
       }
 
@@ -76,7 +84,10 @@ object Boilerplate {
    header +
      """|
        |import com.tactix4.t4openerp.connector.transport.OEMap
+       |import com.tactix4.t4openerp.connector.transport.OEType
        |import com.tactix4.t4openerp.connector.pimpEncoder
+       |import scala.language.postfixOps
+       |
        |object GeneratedEncodeOE {
        |%s
        |}
@@ -94,7 +105,7 @@ object Boilerplate {
           |     val r = c.dict.map(d => for {
           |      f1 <- (d.get(an) | OENull).decodeAs[A]
           |     } yield f(f1))
-          |     r | DecodeResult.fail("Unable to decode")
+          |     r | CodecResult.fail(s"Unable to decode: $c")
           |     })
           |
           | """.stripMargin
@@ -124,7 +135,7 @@ object Boilerplate {
             |%s
             |     } yield f(%s))
             |
-            |     s | DecodeResult.fail("Unable to decode")
+            |     s | CodecResult.fail("Unable to decode")
             |   })
             | """.format(
             arity,

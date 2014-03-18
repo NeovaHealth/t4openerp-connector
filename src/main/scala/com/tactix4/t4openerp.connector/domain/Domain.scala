@@ -20,7 +20,7 @@ package com.tactix4.t4openerp.connector.domain
 import com.tactix4.t4openerp.connector.transport._
 import com.tactix4.t4openerp.connector._
 import scala.language.implicitConversions
-import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
+import com.tactix4.t4openerp.connector.codecs.{CodecResult, OEDataEncoder}
 
 /**
  * A trait to specify Domains for [[com.tactix4.t4openerp.connector.OESession]] queries
@@ -243,7 +243,7 @@ object Domain {
    * Provides the OEDataWriter[Domain] implementation which enables the [[com.tactix4.t4openerp.connector.transport.PimpedAny]]
    * call to .toTransportDataType()
    */
-  implicit val DomainToTransportData  = OEDataEncoder[Domain]{ obj =>
+  implicit val DomainToOEType = OEDataEncoder[Domain]{ obj =>
       def loopTR(tree:List[Domain])(acc:List[OEType]) : List[OEType] = {
         tree match{
           case Nil => acc.reverse
@@ -253,7 +253,7 @@ object Domain {
           case (e:NOT)::rs => loopTR(rs)("!" :: acc)
         }
       }
-      OEArray(loopTR(List(obj))(Nil))
+      CodecResult.ok(OEArray(loopTR(List(obj))(Nil)))
    }
 }
 

@@ -3,6 +3,7 @@ package com.tactix4.t4openerp.connector
 import scala.Some
 
 import com.tactix4.t4openerp.connector.codecs._
+import com.tactix4.t4openerp.connector._
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
 import org.scalatest.{FunSuite, ShouldMatchers}
@@ -52,7 +53,7 @@ class OECodecTest extends FunSuite with PropertyChecks with ShouldMatchers{
 
     forAll(CodecTestClassGen){ randomClass =>
       val encodedClass = randomClass.encode
-      val decodedClass = encodedClass.decodeAs[CodecTestClass]
+      val decodedClass = encodedClass.flatMap(_.decodeAs[CodecTestClass])
 
       decodedClass.toOption shouldEqual Some(randomClass)
 
