@@ -19,8 +19,10 @@ package com.tactix4.t4openerp.connector.domain
 
 import com.tactix4.t4openerp.connector.transport._
 import com.tactix4.t4openerp.connector._
+import scalaz._
+import Scalaz._
 import scala.language.implicitConversions
-import com.tactix4.t4openerp.connector.codecs.{CodecResult, OEDataEncoder}
+import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
 
 /**
  * A trait to specify Domains for [[com.tactix4.t4openerp.connector.OESession]] queries
@@ -239,10 +241,6 @@ object Domain {
   implicit def StringToDomainOperator(s: String): DomainOperators = new DomainOperators(s)
 
 
-  /**
-   * Provides the OEDataWriter[Domain] implementation which enables the [[com.tactix4.t4openerp.connector.transport.PimpedAny]]
-   * call to .toTransportDataType()
-   */
   implicit val DomainToOEType = OEDataEncoder[Domain]{ obj =>
       def loopTR(tree:List[Domain])(acc:List[OEType]) : List[OEType] = {
         tree match{
@@ -253,7 +251,7 @@ object Domain {
           case (e:NOT)::rs => loopTR(rs)("!" :: acc)
         }
       }
-      CodecResult.ok(OEArray(loopTR(List(obj))(Nil)))
+      OEArray(loopTR(List(obj))(Nil)).success
    }
 }
 

@@ -23,6 +23,7 @@ import com.tactix4.t4openerp.connector._
 import com.typesafe.scalalogging.slf4j.Logging
 
 import scalaz.syntax.id._
+import scalaz.syntax.validation._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
@@ -39,7 +40,7 @@ object XmlRpcOEAdaptor extends OETransportAdaptor with XmlRpcResponses with Logg
   implicit def OpenERPTransportConfig2XmlRpcConfig(config:OETransportConfig):XmlRpcConfig =  XmlRpcConfig(config.protocol, config.host, config.port, config.path, config.headers)
 
 
-   implicit object XmlRpcToOETypeConverter {
+   implicit object XmlRpcToOE {
 
      def encode(obj: XmlRpcDataType): OEType = obj.fold(
       b => OEBoolean(b),
@@ -63,25 +64,21 @@ object XmlRpcOEAdaptor extends OETransportAdaptor with XmlRpcResponses with Logg
    }
 
 
-   override def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]): FutureResponse[ErrorMessage,OEType] = {
+   override def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]): FutureResult[ErrorMessage,OEType] = {
 
-     val ps = params.map(XmlRpcToOETypeConverter.decode)
+     val ps = params.map(XmlRpcToOE.decode)
 
-    val request = XmlRpcClient.request(OpenERPTransportConfig2XmlRpcConfig(config), methodName, ps)
-
-    request.map(_.fold(
-       (fault: XmlRpcClient.XmlRpcResponseFault) => fault.toString().left,
-
-       (normal: XmlRpcClient.XmlRpcResponseNormal) => {
-          val array = for {
-            h <- normal.params.headOption
-          } yield XmlRpcToOETypeConverter.encode(h)
-
-         array.fold(s"Unexpected result from OpenERP Server: $normal".left[OEType])(_.right[String])
-       })) recover{
-      case e: Throwable => e.getMessage.left
-    }
-  }
+     XmlRpcClient.request(OpenERPTransportConfig2XmlRpcConfig(config), methodName, ps).map(_.fold(
+       (f: XmlRpcClient.XmlRpcResponseFault) => f.toString().failure[OEType],
+       (n: XmlRpcClient.XmlRpcResponseNormal) => {
+         n.params.headOption.map(XmlRpcToOE.encode).fold(
+          s"Unexpected result from OpenERP Server: $n".failure[OEType])(
+          _.success[String])
+       })) recover {
+       case e: Throwable => e.getMessage.failure[OEType]
+     }
+   }
+  
 
                        
 

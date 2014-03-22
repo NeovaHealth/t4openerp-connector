@@ -42,18 +42,18 @@ class OEConnector(protocol: String, host: String, port: Int) extends Logging {
   val transportClient:OETransportAdaptor = XmlRpcOEAdaptor
 
 
-  def getDatabaseList:FutureResponse[ErrorMessage,List[String]] ={
+  def getDatabaseList:FutureResult[ErrorMessage,List[String]] ={
     val conf = config.copy(path = RPCService.RPC_DATABASE.toString)
 
     transportClient.sendRequest(conf, "list",Nil).fold(
-        (error: String) => error.left[List[String]])(
+        (error: String) => error.failure[List[String]])(
         (result: OEType) => {
           val dbList = for {
             a <- result.array
             r = a.map(_.toString)
-          } yield r.right[ErrorMessage]
+          } yield r.success[ErrorMessage]
 
-          dbList |  s"Unexpected result when querying database list: $result".left[List[String]]
+          dbList |  s"Unexpected result when querying database list: $result".failure[List[String]]
         }
     )
   }
@@ -76,9 +76,9 @@ class OEConnector(protocol: String, host: String, port: Int) extends Logging {
     val conf = config.copy(path = RPCService.RPC_COMMON.toString)
 
     val uid = transportClient.sendRequest(conf, "login", database, username, password).fold(
-          (error:String) => error.left[Int])(
-          (v: OEType) =>  v.int.fold(s"Login failed: $v".left[Int])(_.right[ErrorMessage])
-          )
+          (error:String) => error.failure[Int])(
+          (v: OEType) =>  v.int.fold(s"Login failed: $v".failure[Int])(_.success[ErrorMessage])
+      )
 
     OESession(uid,transportClient,config,database,password,context|OEContext())
   }

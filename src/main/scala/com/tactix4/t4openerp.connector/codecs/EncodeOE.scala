@@ -21,6 +21,7 @@ import com.tactix4.t4openerp.connector.transport.OEType
 
 import scala.annotation.implicitNotFound
 import scala.language.implicitConversions
+import com.tactix4.t4openerp.connector.CodecResult
 
 /**
  *

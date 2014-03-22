@@ -85,7 +85,7 @@ object Boilerplate {
      """|
        |import com.tactix4.t4openerp.connector.transport.OEMap
        |import com.tactix4.t4openerp.connector.transport.OEType
-       |import com.tactix4.t4openerp.connector.pimpEncoder
+       |import com.tactix4.t4openerp.connector.{CodecResult, pimpEncoder}
        |import scala.language.postfixOps
        |
        |object GeneratedEncodeOE {
@@ -105,7 +105,7 @@ object Boilerplate {
           |     val r = c.dict.map(d => for {
           |      f1 <- (d.get(an) | OENull).decodeAs[A]
           |     } yield f(f1))
-          |     r | CodecResult.fail(s"Unable to decode: $c")
+          |     r | s"Unable to decode: $c".failure
           |     })
           |
           | """.stripMargin
@@ -135,7 +135,7 @@ object Boilerplate {
             |%s
             |     } yield f(%s))
             |
-            |     s | CodecResult.fail("Unable to decode")
+            |     s | s"Unable to decode $c".failure
             |   })
             | """.format(
             arity,
