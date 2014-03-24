@@ -66,7 +66,7 @@ sealed trait OEType{
   def int : Option[Int]                     = this.fold(_ => None,n=> Some(n.intValue),_=>None,_=>None,_=>None,_=>None)
   def string : Option[String]               = this.fold(_ => None,_=> None,s=>Some(s),_=>None,_=>None,_=>None)
   def array : Option[List[OEType]]          = this.fold(_ => None,_=> None,_=>None,a => Some(a),_=> None,_=>None)
-  def dict : Option[Map[String,OEType]]     = this.fold(_ => None,_=> None,_=>None,_=>None,s=>Some(s),_=>None)
+  def dictionary : Option[Map[String,OEType]]     = this.fold(_ => None,_=> None,_=>None,_=>None,s=>Some(s),_=>None)
   def nullT : Option[Nothing]               = this.fold(_ => None,_=> None,_=>None,_=>None,_=>None,_ => null)
 
   def isBool :Boolean   = this.fold(_ => true, _ => false,_ => false,_ => false,_ => false,_ => false)
@@ -75,7 +75,7 @@ sealed trait OEType{
   def isDouble :Boolean = this.fold(_ => false,n => n.isValidDouble, _ => false,_ => false,_ => false,_ => false)
   def isString :Boolean = this.fold(_ => false,_ => false,_ => true, _ => false,_ => false,_ => true)
   def isArray :Boolean  = this.fold(_ => false,_ => false,_ => false,_ => true, _ => false,_ => false)
-  def isStruct :Boolean = this.fold(_ => false,_ => false,_ => false,_ => false,_ => true, _ => false)
+  def isDictionary :Boolean = this.fold(_ => false,_ => false,_ => false,_ => false,_ => true, _ => false)
   def isNull :Boolean   = this.fold(_ => false,_ => false,_ => false,_ => false,_ => false,_ => true)
 
   def asBool[X](f: Boolean => X): Option[X] = bool.map(f)
@@ -84,7 +84,7 @@ sealed trait OEType{
   def asDouble[X](f: Double => X) = double.map(f)
   def asString[X](f: String => X) = string.map(f)
   def asArray[X](f: List[OEType] => X) = array.map(f)
-  def asStruct[X](f: Map[String,OEType] => X) = dict.map(f)
+  def asDictionary[X](f: Map[String,OEType] => X) = dictionary.map(f)
 
 }
 
