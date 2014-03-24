@@ -71,10 +71,20 @@ sealed trait OEType{
 
   def isBool :Boolean   = this.fold(_ => true, _ => false,_ => false,_ => false,_ => false,_ => false)
   def isNumber :Boolean = this.fold(_ => false,_ => true, _ => false,_ => false,_ => false,_ => false)
+  def isInt :Boolean    = this.fold(_ => false,n => n.isValidInt, _ => false,_ => false,_ => false,_ => false)
+  def isDouble :Boolean = this.fold(_ => false,n => n.isValidDouble, _ => false,_ => false,_ => false,_ => false)
   def isString :Boolean = this.fold(_ => false,_ => false,_ => true, _ => false,_ => false,_ => true)
   def isArray :Boolean  = this.fold(_ => false,_ => false,_ => false,_ => true, _ => false,_ => false)
   def isStruct :Boolean = this.fold(_ => false,_ => false,_ => false,_ => false,_ => true, _ => false)
   def isNull :Boolean   = this.fold(_ => false,_ => false,_ => false,_ => false,_ => false,_ => true)
+
+  def asBool[X](f: Boolean => X): Option[X] = bool.map(f)
+  def asNumber[X](f: BigDecimal => X): Option[X] = number.map(f)
+  def asInt[X](f: Int => X) = int.map(f)
+  def asDouble[X](f: Double => X) = double.map(f)
+  def asString[X](f: String => X) = string.map(f)
+  def asArray[X](f: List[OEType] => X) = array.map(f)
+  def asStruct[X](f: Map[String,OEType] => X) = dict.map(f)
 
 }
 
