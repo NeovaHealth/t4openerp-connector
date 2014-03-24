@@ -60,7 +60,7 @@ package object connector{
   implicit val boolDecoder = OEDataDecoder[Boolean]((t: OEType) => t.bool.map(_.success[ErrorMessage]) | s"Not Boolean: $t".failure[Boolean])
   implicit def listDecoder[T:OEDataDecoder] = OEDataDecoder[List[T]]((t:OEType) => t.array.map(a => a.map(_.decodeAs[T]).sequence[CodecResult,T]) | s"Not a list of ints: $t".failure[List[T]])
   implicit def mapDecoder[T:OEDataDecoder] : OEDataDecoder[Map[String,T]] = OEDataDecoder[Map[String,T]]((t:OEType) =>
-    t.dict.map( _.mapValues(_.decodeAs[T]).foldRight(Map[String,T]().success[ErrorMessage])((tuple,result) =>  for {
+    t.dictionary.map( _.mapValues(_.decodeAs[T]).foldRight(Map[String,T]().success[ErrorMessage])((tuple,result) =>  for {
         a <- tuple._2
         b <- Map(tuple._1 -> a).success
         c <- result
@@ -84,7 +84,7 @@ package object connector{
       a <- tuple._2
       b <- OEMap(tuple._1 -> a).success
       c <- result
-    } yield OEMap(b.value ++ (c.dict | Map()))
+    } yield OEMap(b.value ++ (c.dictionary | Map()))
     )
   )
 

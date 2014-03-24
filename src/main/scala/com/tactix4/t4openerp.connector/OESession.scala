@@ -66,7 +66,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
     result.ffMap(r => {
       val rec = for {
         array <- r.array
-        s <- array.flatMap(_.dict.map(OEMap.apply)).some
+        s <- array.flatMap(_.asDictionary(OEMap.apply)).some
       } yield s.success[ErrorMessage]
 
       rec | s"Unexpected response from a read request: $result".failure[List[OEMap]]
@@ -104,7 +104,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
 
     val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "create", OEMap(fields), context))
 
-    result.ffMap(t => t.int.map(_.success[ErrorMessage]) | s"Unexpected response from a create request: $t".failure[Id])
+    result.ffMap(t => t.asInt(_.success[ErrorMessage]) | s"Unexpected response from a create request: $t".failure[Id])
   }
 
   /**
@@ -124,7 +124,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
 
     val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "write", ids, OEMap(fields), context))
 
-    result.ffMap(b => b.bool.map(_.success[ErrorMessage]) | s"Unexpected response from a write request: $b".failure[Boolean])
+    result.ffMap(b => b.asBool(_.success[ErrorMessage]) | s"Unexpected response from a write request: $b".failure[Boolean])
 
 
   }
@@ -139,7 +139,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
 
     val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "unlink", ids, context))
 
-    result.ffMap(b => b.bool.map(
+    result.ffMap(b => b.asBool(
       _.success[ErrorMessage]) | s"Unexpected response from an unlink request: $b".failure[Boolean])
   }
 

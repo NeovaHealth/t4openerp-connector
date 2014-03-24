@@ -102,7 +102,7 @@ object Boilerplate {
         """|
           |  def decode1M[A: OEDataDecoder, X](f: A => X)(an: String): OEDataDecoder[X] =
           |    OEDataDecoder(c => {
-          |     val r = c.dict.map(d => for {
+          |     val r = c.asDictionary(d => for {
           |      f1 <- (d.get(an) | OENull).decodeAs[A]
           |     } yield f(f1))
           |     r | s"Unable to decode: $c".failure
@@ -131,7 +131,7 @@ object Boilerplate {
           """|
             |  def decode%sM[%s, X](f: (%s) => X)(%s): OEDataDecoder[X] =
             |    OEDataDecoder(c => {
-            |     val s = c.dict.map( d => for {
+            |     val s = c.asDictionary( d => for {
             |%s
             |     } yield f(%s))
             |
