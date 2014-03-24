@@ -50,7 +50,7 @@ object XmlRpcOEAdaptor extends OETransportAdaptor with XmlRpcResponses with Logg
       b => OEString(new String(b)),
       s => OEString(s),
       a => OEArray(a.map(encode)),
-      s => OEMap(s.mapValues(encode))
+      s => OEDictionary(s.mapValues(encode))
      )
 
      def decode(obj: OEType): XmlRpcDataType = obj.fold(

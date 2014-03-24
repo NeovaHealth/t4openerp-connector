@@ -54,7 +54,7 @@ object Boilerplate {
           | def encode1M[A:OEDataEncoder,X](f: X => A)(an: String): OEDataEncoder[X] =
           |   OEDataEncoder[X](x => {
           |     val t = f(x).encode
-          |     t.map(e => OEMap(an -> e) )
+          |     t.map(e => OEDictionary(an -> e) )
           |   })
           | """.stripMargin
 
@@ -66,7 +66,7 @@ object Boilerplate {
             |     OEDataEncoder[X](x => {
             |       val t = f(x)
             |       val e = List(%s).sequence[CodecResult,OEType]
-            |       e.map(l => OEMap(List(%s) zip l toMap))
+            |       e.map(l => OEDictionary(List(%s) zip l toMap))
             |     })
             | """.format(
             arity,
@@ -83,7 +83,7 @@ object Boilerplate {
 
    header +
      """|
-       |import com.tactix4.t4openerp.connector.transport.OEMap
+       |import com.tactix4.t4openerp.connector.transport.OEDictionary
        |import com.tactix4.t4openerp.connector.transport.OEType
        |import com.tactix4.t4openerp.connector.{CodecResult, pimpEncoder}
        |import scala.language.postfixOps

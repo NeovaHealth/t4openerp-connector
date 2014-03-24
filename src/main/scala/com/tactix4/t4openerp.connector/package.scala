@@ -79,12 +79,12 @@ package object connector{
   implicit val boolEncoder = OEDataEncoder[Boolean]((b: Boolean) => OEBoolean(b).success)
   implicit def listEncoder[T:OEDataEncoder] = OEDataEncoder[List[T]]((t:List[T]) => t.map(_.encode).sequence[CodecResult,OEType].map(OEArray(_)))
   implicit def mapEncoder[T:OEDataEncoder] = OEDataEncoder[Map[String,T]]((m:Map[String,T]) =>
-    m.map(v => (v._1,v._2.encode)).foldRight((OEMap():OEType).success[ErrorMessage])((tuple, result) =>
+    m.map(v => (v._1,v._2.encode)).foldRight((OEDictionary():OEType).success[ErrorMessage])((tuple, result) =>
     for {
       a <- tuple._2
-      b <- OEMap(tuple._1 -> a).success
+      b <- OEDictionary(tuple._1 -> a).success
       c <- result
-    } yield OEMap(b.value ++ (c.dictionary | Map()))
+    } yield OEDictionary(b.value ++ (c.dictionary | Map()))
     )
   )
 

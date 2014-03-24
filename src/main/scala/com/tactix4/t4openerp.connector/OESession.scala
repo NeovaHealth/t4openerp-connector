@@ -59,17 +59,17 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[OETransportAdaptor]]
    */
 
-  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): OEResponse[List[OEMap]] = {
+  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): OEResponse[List[OEDictionary]] = {
 
     val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "read", ids, fieldNames, context))
 
     result.ffMap(r => {
       val rec = for {
         array <- r.array
-        s <- array.flatMap(_.asDictionary(OEMap.apply)).some
+        s <- array.flatMap(_.asDictionary(OEDictionary.apply)).some
       } yield s.success[ErrorMessage]
 
-      rec | s"Unexpected response from a read request: $result".failure[List[OEMap]]
+      rec | s"Unexpected response from a read request: $result".failure[List[OEDictionary]]
     })
 
   }
@@ -84,7 +84,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * @param order the column name by which to sort the results
    * @return a [[scala.concurrent.Future]] containing the results of the query
    */
-  def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResponse[List[OEMap]] = {
+  def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResponse[List[OEDictionary]] = {
     for {
       ids <- search(model, domain, offset, limit, order)
       result <- read(model, ids, fields)
@@ -102,7 +102,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    */
   def create(model: String, fields: Map[String, OEType]): OEResponse[Id] = {
 
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "create", OEMap(fields), context))
+    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "create", OEDictionary(fields), context))
 
     result.ffMap(t => t.asInt(_.success[ErrorMessage]) | s"Unexpected response from a create request: $t".failure[Id])
   }
@@ -122,7 +122,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    */
   def write(model: String, ids: List[Int], fields: Map[String, OEType]): OEResponse[Boolean] = {
 
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "write", ids, OEMap(fields), context))
+    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "write", ids, OEDictionary(fields), context))
 
     result.ffMap(b => b.asBool(_.success[ErrorMessage]) | s"Unexpected response from a write request: $b".failure[Boolean])
 
