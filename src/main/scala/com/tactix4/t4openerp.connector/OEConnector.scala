@@ -42,16 +42,13 @@ class OEConnector(protocol: String, host: String, port: Int) extends Logging {
   val transportClient:OETransportAdaptor = XmlRpcOEAdaptor
 
 
-  def getDatabaseList:OEResponse[List[String]] ={
+  def getDatabaseList:OEResult[List[String]] ={
     val conf = config.copy(path = RPCService.RPC_DATABASE.toString)
 
-    transportClient.sendRequest(conf, "list",Nil).fold(
-        error => error.failure[List[String]])(
-        (result: OEType) =>  {
-          val dbList = result.asArray(_.map(_.string).flatten.success[ErrorMessage])
-          dbList |  s"Unexpected result when querying database list: $result".failure[List[String]]
-        }
-    )
+    transportClient.sendRequest(conf, "list",Nil).ffMap( result =>  {
+      val dbList = result.asArray(_.map(_.string).flatten.success[ErrorMessage])
+      dbList |  s"Unexpected result when querying database list: $result".failure[List[String]]
+    })
   }
 
   /**

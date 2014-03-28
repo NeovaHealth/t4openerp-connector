@@ -41,7 +41,7 @@ package object connector{
   type ErrorMessage = String
   type Id = Int
 
-  type OEResponse[A] = FutureResult[ErrorMessage,A]
+  type OEResult[A] = FutureResult[ErrorMessage,A]
 
 
   implicit def OptionDomainToOEType(o:Option[Domain]): OEType = o.flatMap(_.encode.toOption) | OEString("")
@@ -54,13 +54,13 @@ package object connector{
   implicit def intToOERPNumber(i:Int)= OENumber(i)
   implicit def doubleToOERPNumber(d:Double)= OENumber(d)
 
-  implicit val stringDecoder = OEDataDecoder[String]((t: OEType) => t.string.map(_.success[String]) | s"Not String: $t".failure[String])
-  implicit val intDecoder = OEDataDecoder[Int]((t: OEType) => t.int.map(_.success[ErrorMessage]) | s"Not Int: $t".failure[Int])
-  implicit val doubleDecoder = OEDataDecoder[Double]((t: OEType) => t.double.map(_.success[ErrorMessage]) | s"Not Double: $t".failure[Double])
-  implicit val boolDecoder = OEDataDecoder[Boolean]((t: OEType) => t.bool.map(_.success[ErrorMessage]) | s"Not Boolean: $t".failure[Boolean])
-  implicit def listDecoder[T:OEDataDecoder] = OEDataDecoder[List[T]]((t:OEType) => t.array.map(a => a.map(_.decodeAs[T]).sequence[CodecResult,T]) | s"Not a list of ints: $t".failure[List[T]])
+  implicit val stringDecoder = OEDataDecoder[String]((t: OEType) => t.asString(_.success[String]) | s"Not String: $t".failure[String])
+  implicit val intDecoder = OEDataDecoder[Int]((t: OEType) => t.asInt(_.success[ErrorMessage]) | s"Not Int: $t".failure[Int])
+  implicit val doubleDecoder = OEDataDecoder[Double]((t: OEType) => t.asDouble(_.success[ErrorMessage]) | s"Not Double: $t".failure[Double])
+  implicit val boolDecoder = OEDataDecoder[Boolean]((t: OEType) => t.asBool(_.success[ErrorMessage]) | s"Not Boolean: $t".failure[Boolean])
+  implicit def listDecoder[T:OEDataDecoder] = OEDataDecoder[List[T]]((t:OEType) => t.asArray(a => a.map(_.decodeAs[T]).sequence[CodecResult,T]) | s"Not a list of ints: $t".failure[List[T]])
   implicit def mapDecoder[T:OEDataDecoder] : OEDataDecoder[Map[String,T]] = OEDataDecoder[Map[String,T]]((t:OEType) =>
-    t.dictionary.map( _.mapValues(_.decodeAs[T]).foldRight(Map[String,T]().success[ErrorMessage])((tuple,result) =>  for {
+    t.asDictionary( _.mapValues(_.decodeAs[T]).foldRight(Map[String,T]().success[ErrorMessage])((tuple,result) =>  for {
         a <- tuple._2
         b <- Map(tuple._1 -> a).success
         c <- result
@@ -68,10 +68,10 @@ package object connector{
     )) | s"Could not decode map: $t".fail[Map[String,T]])
 
 
-  implicit val OptionBoolDecoder = OEDataDecoder[Option[Boolean]]((t: OEType) =>t.bool.success[ErrorMessage])
-  implicit val OptionIntDecoder = OEDataDecoder[Option[Int]]((t: OEType) => t.int.success[ErrorMessage])
-  implicit val OptionDoubleDecoder = OEDataDecoder[Option[Double]]((t: OEType) => t.double.success[ErrorMessage])
-  implicit val OptionStringDecoder = OEDataDecoder[Option[String]]((t: OEType) => t.string.success[ErrorMessage])
+  implicit val OptionBoolDecoder = OEDataDecoder[Option[Boolean]](_.bool.success[ErrorMessage])
+  implicit val OptionIntDecoder = OEDataDecoder[Option[Int]](_.int.success[ErrorMessage])
+  implicit val OptionDoubleDecoder = OEDataDecoder[Option[Double]](_.double.success[ErrorMessage])
+  implicit val OptionStringDecoder = OEDataDecoder[Option[String]](_.string.success[ErrorMessage])
 
   implicit val stringEncoder = OEDataEncoder[String]((s: String) => OEString(s).success)
   implicit val intEncoder = OEDataEncoder[Int]((i: Int) => OENumber(i).success)
@@ -90,7 +90,7 @@ package object connector{
 
 
   implicit val optionBoolEncoder = OEDataEncoder[Option[Boolean]](_.fold[OEType](OENull)(OEBoolean).success)
-  implicit val optionIntEncoder = OEDataEncoder[Option[Int]](_.fold[OEType](OENull)(OENumber(_)) success)
+  implicit val optionIntEncoder = OEDataEncoder[Option[Int]](_.fold[OEType](OENull)(OENumber(_)).success)
   implicit val optionDoubleEncoder = OEDataEncoder[Option[Double]](_.fold[OEType](OENull)(OENumber(_)).success)
   implicit val optionStringEncoder = OEDataEncoder[Option[String]](_.fold[OEType](OENull)(OEString).success)
 

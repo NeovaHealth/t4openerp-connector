@@ -35,7 +35,7 @@ trait OETransportAdaptor {
    * @param params a list of parameters to supply
    * @return A Future[TransportResponse] containing the response from the server
    */
-  def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]) : OEResponse[OEType]
+  def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]) : OEResult[OEType]
   /**
    * send an RPC request over the implementing protocol
    * @param config the [[com.tactix4.t4openerp.connector.transport.OETransportConfig]] to use
@@ -43,7 +43,7 @@ trait OETransportAdaptor {
    * @param params the parameters to supply
    * @return A Future[TransportResponse] containing the response from the server
    */
-  def sendRequest(config: OETransportConfig, methodName: String, params: OEType*) : OEResponse[OEType] = {
+  def sendRequest(config: OETransportConfig, methodName: String, params: OEType*) : OEResult[OEType] = {
     sendRequest(config, methodName,params.toList)
   }
 }

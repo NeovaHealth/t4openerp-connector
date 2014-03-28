@@ -1,13 +1,13 @@
 package com.tactix4.t4openerp.connector.transport
 
-import com.tactix4.t4openerp.connector._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scalaz._
-import Scalaz._
 import scala.language.implicitConversions
+import scalaz.{Monad, Bind, Applicative, Validation}
+import scalaz.syntax.validation._
+import com.tactix4.t4openerp.connector.ErrorMessage
 
-case class FutureResult[E,A](value:Future[Validation[E,A]]){
+class FutureResult[E,A](val value:Future[Validation[E,A]]){
 
   def isError:Future[Boolean] = value.map(_.isFailure)
 
@@ -42,10 +42,15 @@ case class FutureResult[E,A](value:Future[Validation[E,A]]){
 
 object FutureResult{
 
-  implicit def FutureOERPResultToClass[A](f: Future[Validation[ErrorMessage, A]]) = FutureResult(f)
+  def apply[A,E](v:Future[Validation[A,E]]) = new FutureResult(v)
+  def apply[A,E](v:Validation[A,E]) = new FutureResult(Future.successful(v))
 
-  def unit[E,A](a: => A) : FutureResult[E,A] = FutureResult(Future.successful(a.success))
 
+  def ok[A,E](v:A) = new FutureResult(Future.successful(v.success[E]))
+  def fail[A,E](v:E) = new FutureResult(Future.successful(v.failure[A]))
+
+  //alias for ok
+  def unit[E,A](a: => A) : FutureResult[E,A] = FutureResult.ok(a)
 
   implicit def FutureResponseApplicative[L]: Applicative[({type l[a] = FutureResult[L, a]})#l] = new Applicative[({type l[a] = FutureResult[L, a]})#l] {
     def point[A](a: => A) = unit(a)
@@ -62,4 +67,5 @@ object FutureResult{
     def point[A](a: => A): FutureResult[E,A] = unit(a)
   }
 
+  implicit def FutureOERPResultToClass[A](f: Future[Validation[ErrorMessage, A]]) = FutureResult(f)
 }

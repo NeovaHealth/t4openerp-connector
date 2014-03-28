@@ -28,14 +28,14 @@ import Scalaz._
 
 
 
-case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, config: OETransportConfig, database: String, password: String, context: OEContext = OEContext(true, "en_GB", "Europe/London")) extends Logging {
+case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, config: OETransportConfig, database: String, password: String, context: OEContext = OEContext(true, "en_GB", "Europe/London")) extends Logging {
 
   import com.tactix4.t4openerp.connector.stringToOERPString
 
   def isLoggedIn: Future[Boolean] = uid.isResult
 
 
-  def search(model: String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = ""): OEResponse[List[Id]] = {
+  def search(model: String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Id]] = {
 
     val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "search", domain, offset, limit, order, context))
 
@@ -59,7 +59,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[OETransportAdaptor]]
    */
 
-  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): OEResponse[List[OEDictionary]] = {
+  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): OEResult[List[OEDictionary]] = {
 
     val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "read", ids, fieldNames, context))
 
@@ -84,7 +84,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * @param order the column name by which to sort the results
    * @return a [[scala.concurrent.Future]] containing the results of the query
    */
-  def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResponse[List[OEDictionary]] = {
+  def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[OEDictionary]] = {
     for {
       ids <- search(model, domain, offset, limit, order)
       result <- read(model, ids, fields)
@@ -100,7 +100,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * @return a Future containing the id of the new record
    * @throws OpenERPException if the creation fails
    */
-  def create(model: String, fields: Map[String, OEType]): OEResponse[Id] = {
+  def create(model: String, fields: Map[String, OEType]): OEResult[Id] = {
 
     val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "create", OEDictionary(fields), context))
 
@@ -120,7 +120,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * @return a Future[True]
    * @throws OpenERPException if the write fails
    */
-  def write(model: String, ids: List[Int], fields: Map[String, OEType]): OEResponse[Boolean] = {
+  def write(model: String, ids: List[Int], fields: Map[String, OEType]): OEResult[Boolean] = {
 
     val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "write", ids, OEDictionary(fields), context))
 
@@ -135,7 +135,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * @param ids the ids of the records to delete
    * @return Future[true]
    */
-  def unlink(model: String, ids: List[Id]): OEResponse[Boolean] = {
+  def unlink(model: String, ids: List[Id]): OEResult[Boolean] = {
 
     val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "unlink", ids, context))
 
@@ -144,7 +144,7 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
   }
 
 
-  def callMethod(model: String, methodName: String, params: OEType*): OEResponse[OEType] = {
+  def callMethod(model: String, methodName: String, params: OEType*): OEResult[OEType] = {
 
     uid.flatMap(i => {
       transportAdaptor.sendRequest(config, "execute", List[OEType](database, i, password, model, methodName) ++ params.toList ++ List[OEType](context))

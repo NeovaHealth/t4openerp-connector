@@ -17,7 +17,7 @@
 
 package com.tactix4.t4openerp.connector.transport
 
-import scalaz.Monoid
+import scalaz.{Semigroup, Monoid}
 
 
 /**
@@ -93,7 +93,9 @@ case class OENumber(value: BigDecimal) extends OEType
 case class OEBoolean(value: Boolean) extends OEType
 case class OEString(value: String) extends OEType
 class OEArray(val value: List[OEType]) extends OEType
-class OEDictionary(val value: Map[String, OEType]) extends OEType
+class OEDictionary(val value: Map[String, OEType]) extends OEType{
+  def get(k:String) : Option[OEType] = value.get(k)
+}
 case object OENull extends OEType
 
 object OEArray{
@@ -106,6 +108,9 @@ object OEArray{
 
     override def append(f1: OEArray, f2: => OEArray): OEArray = OEArray(f1.value ++ f2.value)
   }
+  implicit val semiGroupInstance = new Semigroup[OEArray] {
+    override def append(f1: OEArray, f2: => OEArray):OEArray = OEArray(f1.value ++ f2.value)
+  }
 
 }
 object OEDictionary{
@@ -117,4 +122,7 @@ object OEDictionary{
     override def zero: OEDictionary = OEDictionary()
     override def append(f1: OEDictionary, f2: => OEDictionary): OEDictionary = OEDictionary(f1.value ++ f2.value)
   }
+   implicit val semiGroupDictionary = new Semigroup[OEDictionary] {
+    override def append(f1: OEDictionary, f2: => OEDictionary): OEDictionary = OEDictionary(f1.value ++ f2.value)
+   }
 }
