@@ -58,7 +58,7 @@ sealed trait OEType{
     case OEString(s)    => s.toString
     case a:OEArray      => a.value.toString
     case m:OEDictionary => m.value.toString
-    case OENull         => OENull.toString
+    case OENull         => "<NULL>"
   }
 
   def bool : Option[Boolean]                  = this.fold(b => Some(b),_=>None,_=>None,_=>None,_=>None,_=>None)
