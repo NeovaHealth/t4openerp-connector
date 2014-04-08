@@ -17,6 +17,8 @@ class FutureResult[E,A](val value:Future[Validation[E,A]]){
 
   def getOrElse[AA >: A](v: AA) : Future[AA] = value.map(_.getOrElse(v))
 
+  def orElse[EE >: E, AA >: A](x: => FutureResult[EE, AA]): FutureResult[EE, AA] = FutureResult(isError.flatMap(b => if(b) x.value else value))
+
   def fold[X](f: E => X)(g: A => X): Future[X] =
     value.map(_.fold(f,g))
 
