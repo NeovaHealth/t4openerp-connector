@@ -35,8 +35,7 @@ initialCommands in console in Test := "import scalaz._, Scalaz._, scalacheck.Sca
 
 osgiSettings
 
-OsgiKeys.bundleSymbolicName := "Tactix4 OpenERP-Connector"
-
+OsgiKeys.bundleSymbolicName := "com.tactix4.t4openerp.connector"
 
 OsgiKeys.importPackage ++= Seq(
   "*"
