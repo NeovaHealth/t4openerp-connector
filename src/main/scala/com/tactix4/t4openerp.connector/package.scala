@@ -18,7 +18,6 @@
 package com.tactix4.t4openerp
 
 import scala.language.implicitConversions
-import scala.concurrent.Future
 import com.tactix4.t4openerp.connector.transport._
 import scalaz._
 import Scalaz._
