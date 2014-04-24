@@ -25,11 +25,10 @@ import com.tactix4.t4openerp.connector.CodecResult
 
 /**
  *
+ * Encoding/Decoding Type Classes
  * @author max@tactix4.com
  *         24/08/2013
  */
-@implicitNotFound(msg = "Can not find OEDataConverter for type ${T}")
-trait OEDataConverter[T] extends OEDataDecoder[T] with OEDataEncoder[T]
 
 @implicitNotFound(msg = "Can not find OEDataDecoder for type ${T}")
 trait OEDataDecoder[T]{
@@ -49,18 +48,9 @@ object OEDataEncoder{
     def encode(obj: T): CodecResult[OEType] = r(obj)
   }
 }
-
-object OEDataConverter{
-  def apply[T](r1: OEType => CodecResult[T])(r2: T => CodecResult[OEType]) : OEDataConverter[T] = new OEDataConverter[T] {
-    override def decode(obj: OEType): CodecResult[T] = r1(obj)
-    override def encode(obj: T): CodecResult[OEType] = r2(obj)
-  }
-}
-
 class EncodeOps[T:OEDataEncoder](any: T) {
   def encode: CodecResult[OEType] = implicitly[OEDataEncoder[T]].encode(any)
 }
 class DecodeOps(any: OEType) {
    def decodeAs[T:OEDataDecoder] : CodecResult[T] = implicitly[OEDataDecoder[T]].decode(any)
-
 }

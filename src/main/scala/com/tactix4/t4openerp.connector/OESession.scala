@@ -34,7 +34,15 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
 
   def isLoggedIn: Future[Boolean] = uid.isResult
 
-
+  /**
+   * Search the supplied model with the optional domain
+   * @param model the model to search
+   * @param domain the domain to apply to the search
+   * @param offset the number of records to skip
+   * @param limit a limit on the number of results
+   * @param order the field name by which to order the results
+   * @return an [[OEResult[List[Id]]]] of the resultant Ids
+   */
   def search(model: String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Id]] = {
 
     val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "search", domain, offset, limit, order, context))
@@ -54,9 +62,8 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * Read/fetch the supplied ids from the openERP server
    *
    * @param ids a [[scala.collection.immutable.List]] of type [[scala.Int]] representing the ids of the records to read
-   * @param fieldNames a [[scala.collection.immutable.List[ S t r i n g]]]
-   * @return
-   * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[OETransportAdaptor]]
+   * @param fieldNames a [[scala.collection.immutable.List[String]]] specifying the names of the fields to return
+   * @return a List of OEDictionaries, wrapped in an [[OEResult]]
    */
 
   def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): OEResult[List[OEDictionary]] = {
@@ -82,7 +89,7 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * @param offset the number of records to skip
    * @param limit the maximum number of records to return
    * @param order the column name by which to sort the results
-   * @return a [[scala.concurrent.Future]] containing the results of the query
+   * @return a List of OEDictionaries, wrapped in an [[OEResult]]
    */
   def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[OEDictionary]] = {
     for {
@@ -97,8 +104,7 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * Create a new record
    * @param model the model within which to create the record
    * @param fields the fieldnames and values to write
-   * @return a Future containing the id of the new record
-   * @throws OpenERPException if the creation fails
+   * @return a OEResult containing the id of the new record
    */
   def create(model: String, fields: Map[String, OEType]): OEResult[Id] = {
 
@@ -117,8 +123,7 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * @param model the model to update
    * @param ids the ids of the records to update
    * @param fields the field names and associated values to update
-   * @return a Future[True]
-   * @throws OpenERPException if the write fails
+   * @return a OEResult[True]
    */
   def write(model: String, ids: List[Int], fields: Map[String, OEType]): OEResult[Boolean] = {
 
@@ -133,7 +138,7 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * Delete records from model with given ids
    * @param model the model to delete from
    * @param ids the ids of the records to delete
-   * @return Future[true]
+   * @return OEResult[true]
    */
   def unlink(model: String, ids: List[Id]): OEResult[Boolean] = {
 
@@ -144,6 +149,13 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
   }
 
 
+  /**
+   * Call an arbitrary method
+   * @param model the model to call the method on
+   * @param methodName the method to call
+   * @param params the method parameters
+   * @return an OEResult[OEType]
+   */
   def callMethod(model: String, methodName: String, params: OEType*): OEResult[OEType] = {
 
     uid.flatMap(i => {

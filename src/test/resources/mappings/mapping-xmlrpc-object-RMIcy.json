@@ -1,0 +1,19 @@
+{
+  "request" : {
+    "url" : "/xmlrpc/object",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalTo" : "<?xml version='1.0'?><methodCall><methodName>execute</methodName><params><param><value><string>database</string></value></param><param><value><int>1</int></value></param><param><value><string>admin</string></value></param><param><value><string>res.partner</string></value></param><param><value><string>read</string></value></param><param><value><array><data><value><int>3</int></value><value><int>6</int></value><value><int>50</int></value><value><int>53</int></value><value><int>5</int></value><value><int>17</int></value><value><int>43</int></value><value><int>117</int></value><value><int>100</int></value><value><int>55</int></value></data></array></value></param><param><value><array><data><value><string>category_id</string></value></data></array></value></param><param><value><struct><member><name>activeTest</name><value><boolean>1</boolean></value></member><member><name>lang</name><value><string>en_GB</string></value></member><member><name>tz</name><value><string>Europe/London</string></value></member></struct></value></param></params></methodCall>"
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "bodyFileName" : "body-xmlrpc-object-RMIcy.json",
+    "headers" : {
+      "Content-Type" : "text/xml",
+      "Content-Length" : "2179",
+      "Server" : "Werkzeug/0.9.4 Python/2.7.5",
+      "Date" : "Sat, 19 Apr 2014 14:26:16 GMT"
+    }
+  }
+}

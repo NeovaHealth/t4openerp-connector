@@ -27,6 +27,7 @@ import scalaz.syntax.validation._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
+import scala.annotation.tailrec
 
 /**
  * Implementation of the OpenERPOERPAdaptor and TransportDataConverter
@@ -55,7 +56,7 @@ object XmlRpcOEAdaptor extends OETransportAdaptor with XmlRpcResponses with Logg
 
      def decode(obj: OEType): XmlRpcDataType = obj.fold(
        b => XmlRpcBoolean(b),
-       d => if(d.isValidInt)XmlRpcInt(d.intValue()) else XmlRpcDouble(d.doubleValue()),
+       d => if(d.scale == 0)XmlRpcInt(d.intValue()) else XmlRpcDouble(d.doubleValue()),
        s => XmlRpcString(s),
        a => XmlRpcArray(a.map(decode)),
        m => XmlRpcStruct(m.mapValues(decode)),

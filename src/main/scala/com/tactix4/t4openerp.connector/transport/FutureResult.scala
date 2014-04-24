@@ -7,6 +7,12 @@ import scalaz.{Monad, Bind, Applicative, Validation}
 import scalaz.syntax.validation._
 import com.tactix4.t4openerp.connector.ErrorMessage
 
+/**
+ * Wrapper class for a [[Future[Validation[E,A]]] providing some convenience methods
+ * @param value the wrapped value
+ * @tparam E the error type
+ * @tparam A the success type
+ */
 class FutureResult[E,A](val value:Future[Validation[E,A]]){
 
   def isError:Future[Boolean] = value.map(_.isFailure)
@@ -45,13 +51,13 @@ object FutureResult{
   def apply[A,E](v:Future[Validation[A,E]]) = new FutureResult(v)
   def apply[A,E](v:Validation[A,E]) = new FutureResult(Future.successful(v))
 
-
   def ok[A,E](v:A) = new FutureResult(Future.successful(v.success[E]))
   def fail[A,E](v:E) = new FutureResult(Future.successful(v.failure[A]))
 
   //alias for ok
   def unit[E,A](a: => A) : FutureResult[E,A] = FutureResult.ok(a)
 
+  // some useful instances of basic algebraic types
   implicit def FutureResponseApplicative[L]: Applicative[({type l[a] = FutureResult[L, a]})#l] = new Applicative[({type l[a] = FutureResult[L, a]})#l] {
     def point[A](a: => A) = unit(a)
     def ap[A, B](fa: => FutureResult[L, A])(f: => FutureResult[L, A => B]) = fa ap f

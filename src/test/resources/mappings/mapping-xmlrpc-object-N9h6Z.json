@@ -1,0 +1,19 @@
+{
+  "request" : {
+    "url" : "/xmlrpc/object",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalTo" : "<?xml version='1.0'?><methodCall><methodName>execute</methodName><params><param><value><string>database</string></value></param><param><value><int>1</int></value></param><param><value><string>admin</string></value></param><param><value><string>res.partner</string></value></param><param><value><string>read</string></value></param><param><value><array><data><value><int>3</int></value><value><int>6</int></value><value><int>50</int></value><value><int>5</int></value><value><int>17</int></value><value><int>11</int></value><value><int>55</int></value><value><int>13</int></value><value><int>16</int></value><value><int>18</int></value><value><int>32</int></value><value><int>40</int></value><value><int>7</int></value><value><int>44</int></value><value><int>37</int></value><value><int>8</int></value><value><int>67</int></value><value><int>4</int></value><value><int>68</int></value><value><int>69</int></value><value><int>58</int></value><value><int>10</int></value><value><int>9</int></value><value><int>41</int></value><value><int>38</int></value><value><int>29</int></value><value><int>57</int></value><value><int>64</int></value><value><int>31</int></value><value><int>21</int></value><value><int>51</int></value><value><int>65</int></value><value><int>23</int></value><value><int>28</int></value><value><int>14</int></value><value><int>22</int></value><value><int>30</int></value><value><int>27</int></value><value><int>45</int></value><value><int>1</int></value><value><int>33</int></value></data></array></value></param><param><value><array><data><value><string>email</string></value><value><string>id</string></value><value><string>name</string></value></data></array></value></param><param><value><struct><member><name>activeTest</name><value><boolean>1</boolean></value></member><member><name>lang</name><value><string>en_GB</string></value></member><member><name>tz</name><value><string>Europe/London</string></value></member></struct></value></param></params></methodCall>"
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "bodyFileName" : "body-xmlrpc-object-N9h6Z.json",
+    "headers" : {
+      "Content-Type" : "text/xml",
+      "Content-Length" : "11257",
+      "Server" : "Werkzeug/0.9.4 Python/2.7.5",
+      "Date" : "Sat, 19 Apr 2014 14:26:18 GMT"
+    }
+  }
+}

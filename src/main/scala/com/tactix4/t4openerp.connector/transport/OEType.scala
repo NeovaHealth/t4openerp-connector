@@ -26,10 +26,10 @@ import scalaz.{Semigroup, Monoid}
  */
 
 /**
- * Hierarchy for the internal data representation
+ * Hierarchy for the OpenERP data representation.
  *
  * This subset of datastructures/types were chosen given the overlap between
- * the supported types in json and xmlrpc
+ * the supported types in json and xmlrpc as well as the basic types in python
  */
 
 
@@ -105,7 +105,6 @@ object OEArray{
 
   val monoidInstance = new Monoid[OEArray]{
     override def zero: OEArray = OEArray(Nil)
-
     override def append(f1: OEArray, f2: => OEArray): OEArray = OEArray(f1.value ++ f2.value)
   }
   implicit val semiGroupInstance = new Semigroup[OEArray] {

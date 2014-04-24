@@ -30,7 +30,7 @@ import scala.language.implicitConversions
  * Entry point into library and used to create an OpenERPSession
  * @param protocol the protocol with which to connect
  * @param host the openerp host to connect to
- * @param port the port on whcih the openerp host is listening for rpc requests
+ * @param port the port on which the openerp host is listening for rpc requests
  *
  * @author max@tactix4.com
  *         14/07/2013
@@ -63,7 +63,7 @@ class OEConnector(protocol: String, host: String, port: Int) extends Logging {
    * @param username the username to use to login to OpenERP
    * @param password the password to use to login to OpenERP
    * @param database the database to connect to
-   * @return a Future[OpenERPSession] which on success represents the session of the logged in user.
+   * @return an OESession
    */
   def startSession(username: String, password: String, database: String,context: Option[OEContext] = None) : OESession= {
     val conf = config.copy(path = RPCService.RPC_COMMON.toString)

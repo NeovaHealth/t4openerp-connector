@@ -1,0 +1,21 @@
+<?xml version='1.0'?>
+<methodResponse>
+<fault>
+<value><struct>
+<member>
+<name>faultCode</name>
+<value><string>warning -- Integrity Error
+
+The operation cannot be completed, probably due to the following:
+- deletion: you may be trying to delete a record while other records still reference it
+- creation/update: a mandatory field is not correctly set
+
+[object with reference: name - name]</string></value>
+</member>
+<member>
+<name>faultString</name>
+<value><string></string></value>
+</member>
+</struct></value>
+</fault>
+</methodResponse>

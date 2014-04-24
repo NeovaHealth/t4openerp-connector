@@ -23,6 +23,7 @@ import scalaz._
 import Scalaz._
 import scala.language.implicitConversions
 import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
+import scala.annotation.tailrec
 
 /**
  * A trait to specify Domains for [[com.tactix4.t4openerp.connector.OESession]] queries
@@ -51,8 +52,6 @@ import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
  * Domain's subclasses [[com.tactix4.t4openerp.connector.domain.AND]] and [[com.tactix4.t4openerp.connector.domain.OR]] build up tree structures
  * of [[com.tactix4.t4openerp.connector.domain.DomainTuple]] expressions, which are constructed from a fieldName, an operator and a value.
  *
- * [[com.tactix4.t4openerp.connector.domain.NOT]] can be applied only to a single DomainTuple and for that reason its factory method is found in
- * DomainTuple rather than Domain
  *
  *
  *
@@ -78,8 +77,8 @@ sealed trait Domain {
 
 /**
  * A class to represent a conjunction of two Domains
- * @param left
- * @param right
+ * @param left the left hand Domain
+ * @param right the right hand Domain
  */
 case class AND(left: Domain, right: Domain) extends Domain {
   override def toString = left + "," + right
@@ -242,6 +241,7 @@ object Domain {
 
 
   implicit val DomainToOEType = OEDataEncoder[Domain]{ obj =>
+      @tailrec
       def loopTR(tree:List[Domain])(acc:List[OEType]) : List[OEType] = {
         tree match{
           case Nil => acc.reverse
@@ -254,23 +254,4 @@ object Domain {
       OEArray(loopTR(List(obj))(Nil)).success
    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

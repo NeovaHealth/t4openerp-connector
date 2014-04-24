@@ -2,4 +2,3 @@ target/
 openerpxmlrpc.iml
 .idea
 .idea_modules
-src/test/resources/application.conf

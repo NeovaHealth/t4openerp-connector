@@ -11,15 +11,16 @@ scalaVersion := "2.10.3"
 
 (sourceGenerators in Compile) <+= (sourceManaged in Compile) map Boilerplate.gen
 
+
 libraryDependencies ++= Seq(
+  "com.tactix4" %% "t4xmlrpc" % "2.0.1",
   "org.scalaz" %% "scalaz-core" % "7.0.5",
   "com.typesafe" %% "scalalogging-slf4j" % "1.0.1",
   "com.typesafe" % "config" % "1.0.2",
-  "com.tactix4" %% "t4xmlrpc" % "2.0",
   "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
-  "org.scalatest" %% "scalatest" % "2.1.3" % "test",
+  "org.scalatest" %% "scalatest" % "2.0" % "test",
   "ch.qos.logback" % "logback-classic" % "1.0.9" % "test",
-  "org.mockito" % "mockito-core" % "1.9.5" % "test"
+  "com.github.tomakehurst" % "wiremock" % "1.46" % "test"
 )
 
 initialCommands in console := "import scalaz._, Scalaz._, com.tactix4.t4openerp.connector._,com.tactix4.t4openerp.connector.transport._,com.tactix4.t4openerp.connector.domain._"
@@ -28,8 +29,7 @@ initialCommands in console in Test := "import scalaz._, Scalaz._, scalacheck.Sca
 
 osgiSettings
 
-OsgiKeys.bundleSymbolicName := "Tactix4 OpenERP-Connector"
-
+OsgiKeys.bundleSymbolicName := "com.tactix4.t4openerp.connector"
 
 OsgiKeys.importPackage ++= Seq(
   "*"

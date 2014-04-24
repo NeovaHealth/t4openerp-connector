@@ -8,7 +8,10 @@ import scala.language.postfixOps
 import com.tactix4.t4openerp.connector.domain.Domain._
 import com.typesafe.config._
 import com.typesafe.scalalogging.slf4j.Logging
-import org.scalatest.FunSuite
+import org.scalatest._
+
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,19 +20,25 @@ import org.scalatest.FunSuite
  * Time: 15:55
  * To change this template use File | Settings | File Templates.
  */
-class OESessionTest extends FunSuite with Logging{
+class OESessionTestProxy extends FunSuite with Logging with BeforeAndAfterAll {
 
  val conf = ConfigFactory.load()
 
-  val username    = conf.getString("openERPServer.username")
-  val password    = conf.getString("openERPServer.password")
-  val database    = conf.getString("openERPServer.database")
-  val openerpHost = conf.getString("openERPServer.hostname")
-  val openerpPort = conf.getInt("openERPServer.port")
+  val username    = "admin"
+  val password    = "admin"
+  val database    = "database"
+  val openerpHost = "127.0.0.1"
+  val openerpPort = 9999
 
   val proxy = new OEConnector("http", openerpHost,openerpPort)
-
+  val wireMockServer = new WireMockServer(wireMockConfig().port(openerpPort))
+  wireMockServer.start()
   val session = proxy.startSession(username,password,database)
+
+  override def afterAll() {
+    wireMockServer.shutdown()
+  }
+
 
   test("Invalid host returns error"){
     val newSession = new OEConnector("http","myfakehostthatdoesntexist.com",1).startSession(username,password,database)
@@ -184,7 +193,7 @@ class OESessionTest extends FunSuite with Logging{
 
     val result = session.callMethod("res.partner","read", 1).biMap(
       m => fail(s"Something went wrong: $m"),
-      b => logger.debug("Hurrah!")
+      b => logger.debug(s"Hurrah! : $b")
     )
 
     Await.result(result.value, 3 seconds)
@@ -196,7 +205,6 @@ class OESessionTest extends FunSuite with Logging{
     )
     Await.result(result.value, 3 seconds)
   }
-
 
 
 }

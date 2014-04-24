@@ -36,7 +36,7 @@ case class OEContext(activeTest: Boolean = true, lang: String = "en_GB", timezon
  */
 object OEContext{
 
-  implicit val oeContextEncoder = encode3M((c: OEContext) => (c.activeTest,c.lang,c.timezone))("activeTest","lang","timezone")
+  implicit val oeContextEncoder = encode3M((c: OEContext) => (c.activeTest,c.lang,c.timezone))("activeTest","lang","tz")
 }
 
 

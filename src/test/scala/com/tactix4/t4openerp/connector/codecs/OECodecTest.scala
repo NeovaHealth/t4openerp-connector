@@ -1,8 +1,6 @@
-package com.tactix4.t4openerp.connector
+package com.tactix4.t4openerp.connector.codecs
 
 import scala.Some
-
-import com.tactix4.t4openerp.connector.codecs._
 import com.tactix4.t4openerp.connector._
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._

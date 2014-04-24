@@ -21,11 +21,8 @@ import com.tactix4.t4openerp.connector._
 
 /**
  * Adaptor to be implemented for each transport mechanism supported
- * currently only XML-RPC but soon to be JSON-RPC
- *
  *  @author max@tactix4.com
  *         7/10/13
- *
  */
 trait OETransportAdaptor {
   /**
@@ -33,7 +30,7 @@ trait OETransportAdaptor {
    * @param config the [[com.tactix4.t4openerp.connector.transport.OETransportConfig]] to use
    * @param methodName the remote method to call
    * @param params a list of parameters to supply
-   * @return A Future[TransportResponse] containing the response from the server
+   * @return A OEResult[OEType] containing the response from the server
    */
   def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]) : OEResult[OEType]
   /**
@@ -41,7 +38,7 @@ trait OETransportAdaptor {
    * @param config the [[com.tactix4.t4openerp.connector.transport.OETransportConfig]] to use
    * @param methodName the remote method to call
    * @param params the parameters to supply
-   * @return A Future[TransportResponse] containing the response from the server
+   * @return A OEResult[OEType] containing the response from the server
    */
   def sendRequest(config: OETransportConfig, methodName: String, params: OEType*) : OEResult[OEType] = {
     sendRequest(config, methodName,params.toList)
