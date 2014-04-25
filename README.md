@@ -1,48 +1,47 @@
 
 # Tactix4 OpenERP Connector
+[![Build Status](https://travis-ci.org/Tactix4/t4openerp-connector.svg?branch=develop)](https://travis-ci.org/Tactix4/t4openerp-connector)
 
 ***
 
 A library designed to connect to an OpenERP server and provide access to a commonly
-used subset of OpenERP's API. It fulfills our internal needs, but is not a complete
-implementation.
-Please fork and submit pull requests, or raise issues, concerning missing functionality
-or bugs.
+used subset of OpenERP's API.
 
-## Motivation
+## 2.0 Release
 
-Largely influenced by [DeBortoli Wine's OpenERP Java API](https://github.com/DeBortoliWines/openerp-java-api)
-we wanted something that would work more effectively in a scala environment as well as make use of scala's
-inherent async support through the Futures mechanism.
+Major rewrite and fundamental change of approach. Ideas shamelessly lifted from the
+[Argonaut](https://github.com/argonaut-io/argonaut) Json parsing library. It is now
+purely functional, with no throwing of exceptions and on the whole significantly simplified.
+
+## Using
+
+Add the following to your build.sbt:
+
+  ```"com.tactix4" %% "t4openerp-connector" % "2.0.0"```
 
 ## Use Case
 
 ```scala
 
-  val connector = new OpenERPConnector("http", "localhost",8069)
+    val session = new OpenERPConnector("http", "localhost",8069).startSession(username,password,database)
 
-  val session = connector.startSession(username,password,database)
+    val ids = session.search("res.partner", "name" ilike "peter")
 
-  val results = for {
-    s <- session
-    sAr <- s.searchAndRead("res.partner",  ("email" ilike "info@") AND ("is_company" =/= true) )
-  } yield sAr
+    ids.biMap(
+      (error:String)  => logger.error(s"That didn't work: $error" ),
+      (ids:List[Int]) => logger.info(s"The ids: $ids"))
 
-  results.onComplete(_ match {
-    case Success(s) => println("Success: " + s)
-    case Failure(f) => println("Failure: " + f.getMessage)
   })
 
 ```
 
 For further use cases see the unit tests.
 
-## Details
+## Motivation
 
-The transport mechanism is currently fulfilled by the t4xmlrpc library. However,
-since the xml-rpc interface is likely to be superseded by the json-rpc interface at some
-stage, it was decided to try and de-couple the transport and allow easy implementation of
-other transport strategies when needed.
+Originally influenced by [DeBortoli Wine's OpenERP Java API](https://github.com/DeBortoliWines/openerp-java-api)
+we wanted something that would work more effectively in a scala environment as well as make use of scala's
+inherent async support through the Futures mechanism.
 
 #### Domains
 
@@ -61,15 +60,6 @@ val ambig = ("id" === 1) AND ("name" === "jim") OR ("name" == "jill")
 // equates to any Jim or Jill with an id of 1
 val nonAmbig = ("id" === 1) AND (("name" === "jim") OR ("name" == "jill"))
 ```
-#### Fields
-
-There is limited provision for the different relational types of fields.
-
-As with the OpenERP Java API we make a special case of many2many relationships when calling 'write'.
-Specifically we implement the 'replace' option automatically for ease of use.
-
-Additionally, calls to 'write' on many2one fields are checked for the correct types, however there is no
-other provision for checking appropriate arguments for other field types.
 
 ## License
 
