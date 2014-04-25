@@ -19,7 +19,7 @@ object XmlRpcGen{
 
   val intGen : Gen[XmlRpcInt]  = arbInt.arbitrary.map(XmlRpcInt)
   val doubleGen : Gen[XmlRpcDouble] = arbDouble.arbitrary.map(XmlRpcDouble)
-  val stringGen : Gen[XmlRpcString] = listOf(alphaNumChar).map(x => XmlRpcString(x.mkString))
+  val stringGen : Gen[XmlRpcString] = arbString.arbitrary.map(XmlRpcString)
   val boolGen : Gen[XmlRpcBoolean]  = arbBool.arbitrary.map(XmlRpcBoolean)
   val base64Gen : Gen[XmlRpcBase64] = arbArray[Byte].arbitrary.map(XmlRpcBase64)
   val dateGen : Gen[XmlRpcDate] = arbDate.arbitrary.map(XmlRpcDate)
