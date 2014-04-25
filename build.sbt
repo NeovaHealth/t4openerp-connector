@@ -11,7 +11,6 @@ scalaVersion := "2.10.3"
 
 (sourceGenerators in Compile) <+= (sourceManaged in Compile) map Boilerplate.gen
 
-
 libraryDependencies ++= Seq(
   "com.tactix4" %% "t4xmlrpc" % "2.0.1",
   "org.scalaz" %% "scalaz-core" % "7.0.6",
