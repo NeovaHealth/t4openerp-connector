@@ -20,11 +20,13 @@ package com.tactix4.t4openerp.connector
 import com.tactix4.t4openerp.connector.transport._
 
 import com.typesafe.scalalogging.slf4j.Logging
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz._
 import Scalaz._
 
+import scalaz.contrib.std.scalaFuture.futureInstance
 import scala.language.implicitConversions
+import scala.concurrent.Future
 
 /**
  * Entry point into library and used to create an OpenERPSession
@@ -42,12 +44,12 @@ class OEConnector(protocol: String, host: String, port: Int) extends Logging {
   val transportClient:OETransportAdaptor = XmlRpcOEAdaptor
 
 
-  def getDatabaseList:OEResult[List[String]] ={
+  def getDatabaseList:EitherT[Future,ErrorMessage,List[String]] ={
     val conf = config.copy(path = RPCService.RPC_DATABASE.toString)
 
-    transportClient.sendRequest(conf, "list",Nil).ffMap( result =>  {
-      val dbList = result.asArray(_.map(_.string).flatten.success[ErrorMessage])
-      dbList |  s"Unexpected result when querying database list: $result".failure[List[String]]
+    transportClient.sendRequest(conf, "list",Nil).flatMap( result =>  {
+      val dbList = result.asArray(_.map(_.string).flatten.right[ErrorMessage])
+      EitherT(Future.successful(dbList |  s"Unexpected result when querying database list: $result".left[List[String]]))
     })
   }
 
@@ -68,12 +70,13 @@ class OEConnector(protocol: String, host: String, port: Int) extends Logging {
   def startSession(username: String, password: String, database: String,context: Option[OEContext] = None) : OESession= {
     val conf = config.copy(path = RPCService.RPC_COMMON.toString)
 
-    val uid = transportClient.sendRequest(conf, "login", database, username, password).fold(
-          (error:String) => error.failure[Int])(
-          (v: OEType) =>  v.int.fold(s"Login failed: $v".failure[Int])(_.success[ErrorMessage])
-      )
+    val uid:FutureEither[OEType] = transportClient.sendRequest(conf, "login", database, username, password)
 
-    OESession(uid,transportClient,config,database,password,context|OEContext())
+    val r = uid.fold(
+      (error: ErrorMessage) => error.left,
+      (v: OEType) =>  v.int.fold(s"Login failed: $v".left[Int])(_.right[ErrorMessage]) )
+
+    OESession(r,transportClient,config,database,password,context|OEContext())
   }
 }
 

@@ -28,6 +28,7 @@ import scalaz.syntax.validation._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 import scala.annotation.tailrec
+import scalaz.EitherT
 
 /**
  * Implementation of the OpenERPOERPAdaptor and TransportDataConverter
@@ -65,19 +66,20 @@ object XmlRpcOEAdaptor extends OETransportAdaptor with XmlRpcResponses with Logg
    }
 
 
-   override def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]): FutureResult[ErrorMessage,OEType] = {
+   override def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]): FutureEither[OEType] = {
 
      val ps = params.map(XmlRpcToOE.decode)
-
-     XmlRpcClient.request(OpenERPTransportConfig2XmlRpcConfig(config), methodName, ps).map(_.fold(
-       (f: XmlRpcClient.XmlRpcResponseFault) => f.toString().failure[OEType],
-       (n: XmlRpcClient.XmlRpcResponseNormal) => {
-         n.params.headOption.map(XmlRpcToOE.encode).fold(
-          s"Unexpected result from OpenERP Server: $n".failure[OEType])(
-          _.success[String])
-       })) recover {
-       case e: Throwable => e.getMessage.failure[OEType]
-     }
+     EitherT(
+       XmlRpcClient.request(OpenERPTransportConfig2XmlRpcConfig(config), methodName, ps).map(_.fold(
+         (f: XmlRpcClient.XmlRpcResponseFault) => f.toString().left[OEType],
+         (n: XmlRpcClient.XmlRpcResponseNormal) => {
+           n.params.headOption.map(XmlRpcToOE.encode).fold(
+             s"Unexpected result from OpenERP Server: $n".left[OEType])(
+               _.right[String])
+         })) recover {
+         case e: Throwable => e.getMessage.left[OEType]
+       }
+     )
    }
   
 

@@ -26,6 +26,7 @@ import com.tactix4.t4openerp.connector.transport.OENumber
 import com.tactix4.t4openerp.connector.transport.OEBoolean
 import com.tactix4.t4openerp.connector.transport.OEString
 import com.tactix4.t4openerp.connector.domain.Domain
+import scala.concurrent.Future
 
 /**
  * @author max@tactix4.com
@@ -36,12 +37,13 @@ package object connector{
   implicit def pimpEncoder[T:OEDataEncoder](any: T) = new EncodeOps[T](any)
   implicit def pimpDecoder(any: OEType) = new DecodeOps(any)
 
+  implicit def futureEitherToFutureEither[A,E](fe: Future[E\/A]): EitherT[Future, E, A] = EitherT(fe)
+
+  type FutureEither[A] = EitherT[Future,ErrorMessage,A]
+
   type CodecResult[A] = Validation[ErrorMessage, A]
   type ErrorMessage = String
   type Id = Int
-
-  type OEResult[A] = FutureResult[ErrorMessage,A]
-
 
   implicit def OptionDomainToOEType(o:Option[Domain]): OEType = o.flatMap(_.encode.toOption) | OEString("")
   implicit def ContextToOEType(c:OEContext):OEType = c.encode.toOption | OEString("")

@@ -14,6 +14,7 @@ scalaVersion := "2.10.3"
 libraryDependencies ++= Seq(
   "com.tactix4" %% "t4xmlrpc" % "2.0.1",
   "org.scalaz" %% "scalaz-core" % "7.0.6",
+  "org.typelevel" %% "scalaz-contrib-210" % "0.1.5",
   "com.typesafe" %% "scalalogging-slf4j" % "1.0.1",
   "com.typesafe" % "config" % "1.0.2",
   "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
