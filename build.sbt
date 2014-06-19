@@ -5,20 +5,21 @@ name := "t4openerp-connector"
 
 organization:= "com.tactix4"
 
-version := "2.0.0"
+version := "2.0.1-SNAPSHOT"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.11.1"
 
 (sourceGenerators in Compile) <+= (sourceManaged in Compile) map Boilerplate.gen
 
+resolvers += "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
+
 libraryDependencies ++= Seq(
-  "com.tactix4" %% "t4xmlrpc" % "2.0.1",
-  "org.scalaz" %% "scalaz-core" % "7.0.6",
-  "org.typelevel" %% "scalaz-contrib-210" % "0.1.5",
-  "com.typesafe" %% "scalalogging-slf4j" % "1.0.1",
-  "com.typesafe" % "config" % "1.0.2",
-  "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
-  "org.scalatest" %% "scalatest" % "2.0" % "test",
+  "com.tactix4" %% "t4xmlrpc" % "2.0.2-SNAPSHOT",
+  "org.scalaz" %% "scalaz-core" % "7.1.0-M7",
+  "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
+  "com.typesafe" % "config" % "1.2.1",
+  "org.scalacheck" %% "scalacheck" % "1.11.4" % "test",
+  "org.scalatest" %% "scalatest" % "2.2.0" % "test",
   "ch.qos.logback" % "logback-classic" % "1.0.9" % "test",
   "com.github.tomakehurst" % "wiremock" % "1.46" % "test"
 )

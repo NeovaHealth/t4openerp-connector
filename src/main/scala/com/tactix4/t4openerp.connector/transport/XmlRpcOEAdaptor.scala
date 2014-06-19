@@ -17,18 +17,13 @@
 
 package com.tactix4.t4openerp.connector.transport
 
-import com.tactix4.t4xmlrpc._
 import com.tactix4.t4openerp.connector._
 
-import com.typesafe.scalalogging.slf4j.Logging
-
-import scalaz.syntax.id._
-import scalaz.syntax.validation._
-
-import scala.concurrent.ExecutionContext.Implicits.global
+import com.typesafe.scalalogging.slf4j.{LazyLogging}
+import scalaz.syntax.either._
 import scala.language.implicitConversions
-import scala.annotation.tailrec
-import scalaz.EitherT
+import com.tactix4.t4xmlrpc._
+import java.util.concurrent.Executor
 
 /**
  * Implementation of the OpenERPOERPAdaptor and TransportDataConverter
@@ -36,8 +31,9 @@ import scalaz.EitherT
  * @author max@tactix4.com
  *         7/12/13
  */
-object XmlRpcOEAdaptor extends OETransportAdaptor with XmlRpcResponses with Logging{
+class XmlRpcOEAdaptor(ex:Option[Executor]) extends OETransportAdaptor with LazyLogging{
 
+  val client = new XmlRpcClient(ex)
   
   implicit def OpenERPTransportConfig2XmlRpcConfig(config:OETransportConfig):XmlRpcConfig =  XmlRpcConfig(config.protocol, config.host, config.port, config.path, config.headers)
 
@@ -68,21 +64,12 @@ object XmlRpcOEAdaptor extends OETransportAdaptor with XmlRpcResponses with Logg
 
    override def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]): FutureEither[OEType] = {
 
-     val ps = params.map(XmlRpcToOE.decode)
-     EitherT(
-       XmlRpcClient.request(OpenERPTransportConfig2XmlRpcConfig(config), methodName, ps).map(_.fold(
-         (f: XmlRpcClient.XmlRpcResponseFault) => f.toString().left[OEType],
-         (n: XmlRpcClient.XmlRpcResponseNormal) => {
-           n.params.headOption.map(XmlRpcToOE.encode).fold(
-             s"Unexpected result from OpenERP Server: $n".left[OEType])(
-               _.right[String])
-         })) recover {
-         case e: Throwable => e.getMessage.left[OEType]
-       }
-     )
+     client.request(OpenERPTransportConfig2XmlRpcConfig(config), methodName, params.map(XmlRpcToOE.decode)).fold(
+       (f: XmlRpcResponseFault) => f.toString.left[OEType],
+       (n: XmlRpcResponseNormal) => n.params.fold(
+         (error: ErrorMessage) => error.left[OEType],
+         (d: List[XmlRpcDataType]) => OEArray(d.map(XmlRpcToOE.encode)).right[ErrorMessage]
+       ))
    }
-  
-
-                       
 
  }

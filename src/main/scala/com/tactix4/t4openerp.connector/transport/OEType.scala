@@ -73,7 +73,7 @@ sealed trait OEType{
   def isBool :Boolean       = this.fold(_ => true, _ => false,_ => false,_ => false,_ => false,_ => false)
   def isNumber :Boolean     = this.fold(_ => false,_ => true, _ => false,_ => false,_ => false,_ => false)
   def isInt :Boolean        = this.fold(_ => false,n => n.isValidInt, _ => false,_ => false,_ => false,_ => false)
-  def isDouble :Boolean     = this.fold(_ => false,n => n.isValidDouble, _ => false,_ => false,_ => false,_ => false)
+  def isDouble :Boolean     = this.fold(_ => false,n => n.isExactDouble, _ => false,_ => false,_ => false,_ => false)
   def isString :Boolean     = this.fold(_ => false,_ => false,_ => true, _ => false,_ => false,_ => true)
   def isArray :Boolean      = this.fold(_ => false,_ => false,_ => false,_ => true, _ => false,_ => false)
   def isDictionary :Boolean = this.fold(_ => false,_ => false,_ => false,_ => false,_ => true, _ => false)
@@ -107,9 +107,6 @@ object OEArray{
     override def zero: OEArray = OEArray(Nil)
     override def append(f1: OEArray, f2: => OEArray): OEArray = OEArray(f1.value ++ f2.value)
   }
-  implicit val semiGroupInstance = new Semigroup[OEArray] {
-    override def append(f1: OEArray, f2: => OEArray):OEArray = OEArray(f1.value ++ f2.value)
-  }
 
 }
 object OEDictionary{
@@ -121,7 +118,4 @@ object OEDictionary{
     override def zero: OEDictionary = OEDictionary()
     override def append(f1: OEDictionary, f2: => OEDictionary): OEDictionary = OEDictionary(f1.value ++ f2.value)
   }
-   implicit val semiGroupDictionary = new Semigroup[OEDictionary] {
-    override def append(f1: OEDictionary, f2: => OEDictionary): OEDictionary = OEDictionary(f1.value ++ f2.value)
-   }
 }

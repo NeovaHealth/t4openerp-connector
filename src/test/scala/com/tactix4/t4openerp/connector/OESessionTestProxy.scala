@@ -1,19 +1,16 @@
 package com.tactix4.t4openerp.connector
 
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import scala.language.postfixOps
-
-import com.tactix4.t4openerp.connector.domain.Domain._
-import com.typesafe.config._
-import com.typesafe.scalalogging.slf4j.Logging
-import org.scalatest._
-import scalaz.contrib.std.scalaFuture.futureInstance
-import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
+import com.tactix4.t4openerp.connector.domain.Domain._
+import com.typesafe.config._
+import com.typesafe.scalalogging.slf4j.LazyLogging
+import org.scalatest._
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+import scala.language.postfixOps
+import com.tactix4.t4xmlrpc._
 /**
  * Created with IntelliJ IDEA.
  * User: max
@@ -21,23 +18,23 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
  * Time: 15:55
  * To change this template use File | Settings | File Templates.
  */
-class OESessionTestProxy extends FunSuite with Logging with BeforeAndAfterAll {
+class OESessionTestProxy extends FunSuite with LazyLogging with BeforeAndAfterAll {
 
  val conf = ConfigFactory.load()
 
   val username    = "admin"
   val password    = "admin"
-  val database    = "database"
-  val openerpHost = "127.0.0.1"
-  val openerpPort = 9999
+  val database    = "t4skr_newsdemo"
+  val openerpHost = "10.10.170.22"
+  val openerpPort = 8069
 
   val proxy = new OEConnector("http", openerpHost,openerpPort)
-  val wireMockServer = new WireMockServer(wireMockConfig().port(openerpPort))
-  wireMockServer.start()
+//  val wireMockServer = new WireMockServer(wireMockConfig().port(openerpPort))
+//  wireMockServer.start()
   val session = proxy.startSession(username,password,database)
 
   override def afterAll() {
-    wireMockServer.shutdown()
+//    wireMockServer.shutdown()
   }
 
 

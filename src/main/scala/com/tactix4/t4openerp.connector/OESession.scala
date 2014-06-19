@@ -19,10 +19,9 @@ package com.tactix4.t4openerp.connector
 
 import com.tactix4.t4openerp.connector.transport._
 import com.tactix4.t4openerp.connector.domain.Domain
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import scala.language.implicitConversions
 import scala.concurrent.Future
-import scalaz.contrib.std.scalaFuture.futureInstance
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scalaz._
@@ -30,7 +29,7 @@ import Scalaz._
 
 
 
-case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OETransportAdaptor, config: OETransportConfig, database: String, password: String, context: OEContext = OEContext(true, "en_GB", "Europe/London")) extends Logging {
+case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OETransportAdaptor, config: OETransportConfig, database: String, password: String, context: OEContext = OEContext(true, "en_GB", "Europe/London")) extends LazyLogging {
 
   /**
    * Search the supplied model with the optional domain
@@ -45,7 +44,7 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
 
     for {
       r <- callMethod(model, "search", domain, offset, limit, order)
-      v <- (r.array.flatMap(_.map(_.int).sequence) \/> s"Unexpected response from a search request: $r").point[Future]
+      v <- (r.array.flatMap(_.map(_.int).sequence[Option,Int]) \/> s"Unexpected response from a search request: $r").asET
     } yield v
 
   }
@@ -58,14 +57,12 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
    * @return a List of OEDictionaries, wrapped in an [[FutureEither]]
    */
 
-  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): FutureEither[List[Map[String,OEType]]] = {
-
+  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): FutureEither[List[Map[String,OEType]]] =
     for {
       r <- callMethod(model, "read", ids, fieldNames)
-      v <- (r.array.flatMap(_.map(_.dictionary).sequence) \/> s"Unexpected response from a read request: $r").point[Future]
+      a <- (r.array \/> s"Response was not a an array: $r").asET
+      v <- (a.map(_.dictionary).sequence[Option, Map[String,OEType]] \/> s"Response was not an array of maps: $r").asET
     } yield v
-
-  }
 
   /**
    * Combines the search and the read operations for convenience
@@ -81,6 +78,7 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
 
     for {
       ids <- search(model, domain, offset, limit, order)
+      if ids.nonEmpty
       result <- read(model, ids, fields)
     } yield result
 
@@ -97,7 +95,7 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
 
     for {
       r <- callMethod(model,"create",OEDictionary(fields))
-      v <- (r.int \/> s"Unexpected response from a create request: $r").point[Future]
+      v <- (r.int \/> s"Unexpected response from a create request: $r").asET
     } yield v
 
   }
@@ -118,7 +116,7 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
 
     for {
       r <- callMethod(model,"write", ids, OEDictionary(fields))
-      v <- (r.bool \/> s"Expected a Boolean response from a write request, got: $r").point[Future]
+      v <- (r.bool \/> s"Expected a Boolean response from a write request, got: $r").asET
     } yield v
 
 
@@ -134,7 +132,7 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
 
     for {
       r <- callMethod(model,"unlink",ids)
-      v <- (r.bool \/>"Unexpected response from an unlink request: $b").point[Future]
+      v <- (r.bool \/>"Unexpected response from an unlink request: $b").asET
     } yield v
 
   }

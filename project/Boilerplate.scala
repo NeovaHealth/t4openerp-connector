@@ -14,10 +14,8 @@ object Boilerplate {
     val generatedDecodeOE = write(dir / "com" / "tactix4" / "t4openerp-connector" / "GeneratedDecodeOE.scala", genDecodeOE)
 
     val generatedEncodeOE = write(dir / "com" / "tactix4" / "t4openerp-connector" / "GeneratedEncodeOE.scala", genEncodeOE)
-    //
-    //    val generatedCodecJson = write(dir / "argonaut" / "GeneratedCodecJsons.scala", genCodecJsons)
 
-    Seq(generatedDecodeOE, generatedEncodeOE) //, generatedCodecJson)
+    Seq(generatedDecodeOE, generatedEncodeOE)
   }
 
   def header = {
@@ -26,6 +24,7 @@ object Boilerplate {
       |import com.tactix4.t4openerp.connector.transport.OENull
       |import scalaz._
       |import Scalaz._
+      |import scalaz.Validation.FlatMap._
       |
       | """.stripMargin
   }
@@ -87,6 +86,7 @@ object Boilerplate {
        |import com.tactix4.t4openerp.connector.transport.OEType
        |import com.tactix4.t4openerp.connector.{CodecResult, pimpEncoder}
        |import scala.language.postfixOps
+       |import scalaz.Validation.FlatMap._
        |
        |object GeneratedEncodeOE {
        |%s
@@ -153,6 +153,7 @@ object Boilerplate {
     header +
       """|
         |import com.tactix4.t4openerp.connector.pimpDecoder
+        |import scalaz.Validation.FlatMap._
         |
         |object GeneratedDecodeOE {
         |%s
