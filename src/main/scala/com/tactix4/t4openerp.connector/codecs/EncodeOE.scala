@@ -17,11 +17,11 @@
 
 package com.tactix4.t4openerp.connector.codecs
 
+import com.tactix4.t4openerp.connector.CodecResult
 import com.tactix4.t4openerp.connector.transport.OEType
 
 import scala.annotation.implicitNotFound
 import scala.language.implicitConversions
-import com.tactix4.t4openerp.connector.CodecResult
 
 /**
  *
@@ -47,10 +47,4 @@ object OEDataEncoder{
   def apply[T](r: T => CodecResult[OEType]) : OEDataEncoder[T] = new OEDataEncoder[T] {
     def encode(obj: T): CodecResult[OEType] = r(obj)
   }
-}
-class EncodeOps[T:OEDataEncoder](any: T) {
-  def encode: CodecResult[OEType] = implicitly[OEDataEncoder[T]].encode(any)
-}
-class DecodeOps(any: OEType) {
-   def decodeAs[T:OEDataDecoder] : CodecResult[T] = implicitly[OEDataDecoder[T]].decode(any)
 }

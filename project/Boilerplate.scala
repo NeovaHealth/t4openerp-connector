@@ -24,7 +24,6 @@ object Boilerplate {
       |import com.tactix4.t4openerp.connector.transport.OENull
       |import scalaz._
       |import Scalaz._
-      |import scalaz.Validation.FlatMap._
       |
       | """.stripMargin
   }
@@ -84,9 +83,9 @@ object Boilerplate {
      """|
        |import com.tactix4.t4openerp.connector.transport.OEDictionary
        |import com.tactix4.t4openerp.connector.transport.OEType
-       |import com.tactix4.t4openerp.connector.{CodecResult, pimpEncoder}
+       |import com.tactix4.t4openerp.connector.{CodecResult}
+       |import com.tactix4.t4openerp.connector._
        |import scala.language.postfixOps
-       |import scalaz.Validation.FlatMap._
        |
        |object GeneratedEncodeOE {
        |%s
@@ -105,7 +104,7 @@ object Boilerplate {
           |     val r = c.asDictionary(d => for {
           |      f1 <- (d.get(an) | OENull).decodeAs[A]
           |     } yield f(f1))
-          |     r | s"Unable to decode: $c".failure
+          |     r | s"Unable to decode: $c".left
           |     })
           |
           | """.stripMargin
@@ -135,7 +134,7 @@ object Boilerplate {
             |%s
             |     } yield f(%s))
             |
-            |     s | s"Unable to decode $c".failure
+            |     s | s"Unable to decode $c".left
             |   })
             | """.format(
             arity,
@@ -152,8 +151,6 @@ object Boilerplate {
 
     header +
       """|
-        |import com.tactix4.t4openerp.connector.pimpDecoder
-        |import scalaz.Validation.FlatMap._
         |
         |object GeneratedDecodeOE {
         |%s

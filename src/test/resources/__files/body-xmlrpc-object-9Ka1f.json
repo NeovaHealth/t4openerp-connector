@@ -1,0 +1,19 @@
+<?xml version='1.0'?>
+<methodResponse>
+<params>
+<param>
+<value><array><data>
+<value><int>3</int></value>
+<value><int>5</int></value>
+<value><int>167</int></value>
+<value><int>158</int></value>
+<value><int>187</int></value>
+<value><int>136</int></value>
+<value><int>145</int></value>
+<value><int>48</int></value>
+<value><int>1</int></value>
+<value><int>100</int></value>
+</data></array></value>
+</param>
+</params>
+</methodResponse>

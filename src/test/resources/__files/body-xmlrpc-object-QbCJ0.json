@@ -1,0 +1,11 @@
+<?xml version='1.0'?>
+<methodResponse>
+<params>
+<param>
+<value><array><data>
+<value><int>3</int></value>
+<value><int>1</int></value>
+</data></array></value>
+</param>
+</params>
+</methodResponse>

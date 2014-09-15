@@ -18,15 +18,15 @@
 package com.tactix4.t4openerp.connector
 
 import com.tactix4.t4openerp.connector.transport._
-
-
-import scala.language.implicitConversions
-import scala.concurrent.Future
 import com.typesafe.scalalogging.slf4j.LazyLogging
-import java.util.concurrent.Executor
-import scala.concurrent.ExecutionContext.Implicits.global
-import scalaz._
-import Scalaz._
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.language.{implicitConversions, postfixOps}
+import scalaz.EitherT
+import scalaz.std.option._
+import scalaz.std.option.optionSyntax._
+import scalaz.syntax.traverse._
+import scalaz.std.list._
 
 /**
  * Entry point into library and used to create an OpenERPSession
@@ -37,21 +37,18 @@ import Scalaz._
  * @author max@tactix4.com
  *         14/07/2013
  */
-class OEConnector(protocol: String, host: String, port: Int, ex:Option[Executor] = None) extends LazyLogging {
-
-
+class OEConnector(protocol: String, host: String, port: Int)(implicit ec:ExecutionContext) extends LazyLogging {
 
   val config = OETransportConfig(protocol, host, port, RPCService.RPC_OBJECT.toString)
-  val transportClient:OETransportAdaptor = new XmlRpcOEAdaptor(ex)
+  val transportClient:OETransportAdaptor = new XmlRpcOEAdaptor()
 
-
-  def getDatabaseList:EitherT[Future,ErrorMessage,List[String]] ={
+  def getDatabaseList:OEResult[List[String]] ={
     val conf = config.copy(path = RPCService.RPC_DATABASE.toString)
 
     for {
       t <- transportClient.sendRequest(conf, "list",Nil)
-      a <- (t.array \/> "Response was not an array").asET
-      s <- (a.map(_.string).sequence[Option, String] \/> "Response was not an array of strings").asET
+      a <- (t.array \/> "Response was not an array").asOER
+      s <- (a.map(_.string).sequence[Option, String] \/> "Response was not an array of strings").asOER
     } yield s
 
   }
@@ -74,7 +71,7 @@ class OEConnector(protocol: String, host: String, port: Int, ex:Option[Executor]
     val conf = config.copy(path = RPCService.RPC_COMMON.toString)
 
     val uid = transportClient.sendRequest(conf, "login", database, username, password).flatMap(
-      _.int \/> "Login failed" asET
+      _.int \/> "Login failed" asOER
     )
     OESession(uid,transportClient,config,database,password,context|OEContext())
   }

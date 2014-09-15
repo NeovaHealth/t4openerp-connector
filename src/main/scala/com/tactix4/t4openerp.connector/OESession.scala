@@ -17,19 +17,21 @@
 
 package com.tactix4.t4openerp.connector
 
-import com.tactix4.t4openerp.connector.transport._
 import com.tactix4.t4openerp.connector.domain.Domain
+import com.tactix4.t4openerp.connector.transport._
 import com.typesafe.scalalogging.slf4j.LazyLogging
+
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scalaz.EitherT
+import scalaz.std.option._
+import scalaz.std.option.optionSyntax._
+import scalaz.std.string._
+import scalaz.std.list._
+import scalaz.syntax.traverse._
 
-import scalaz._
-import Scalaz._
 
-
-
-case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OETransportAdaptor, config: OETransportConfig, database: String, password: String, context: OEContext = OEContext(true, "en_GB", "Europe/London")) extends LazyLogging {
+case class OESession(uid: OEResult[Int], transportAdaptor: OETransportAdaptor, config: OETransportConfig, database: String, password: String, context: OEContext = OEContext(true, "en_GB", "Europe/London"))(implicit ec:ExecutionContext) extends LazyLogging {
 
   /**
    * Search the supplied model with the optional domain
@@ -38,13 +40,13 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
    * @param offset the number of records to skip
    * @param limit a limit on the number of results
    * @param order the field name by which to order the results
-   * @return an [[FutureEither[List[Id]]]] of the resultant Ids
+   * @return an [[OEResult[List[Int]]]] of the resultant Int
    */
-  def search(model: String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = ""): FutureEither[List[Id]] = {
+  def search(model: String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Int]] = {
 
     for {
       r <- callMethod(model, "search", domain, offset, limit, order)
-      v <- (r.array.flatMap(_.map(_.int).sequence[Option,Int]) \/> s"Unexpected response from a search request: $r").asET
+      v <- (r.array.flatMap(_.map(_.int).sequence[Option,Int]) \/> s"Unexpected response from a search request: $r").asOER
     } yield v
 
   }
@@ -54,14 +56,14 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
    *
    * @param ids a [[scala.collection.immutable.List]] of type [[scala.Int]] representing the ids of the records to read
    * @param fieldNames a [[scala.collection.immutable.List[String]]] specifying the names of the fields to return
-   * @return a List of OEDictionaries, wrapped in an [[FutureEither]]
+   * @return a List of OEDictionaries, wrapped in an [[OEResult]]
    */
 
-  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): FutureEither[List[Map[String,OEType]]] =
+  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): OEResult[List[Map[String,OEType]]] =
     for {
       r <- callMethod(model, "read", ids, fieldNames)
-      a <- (r.array \/> s"Response was not a an array: $r").asET
-      v <- (a.map(_.dictionary).sequence[Option, Map[String,OEType]] \/> s"Response was not an array of maps: $r").asET
+      a <- (r.array \/> s"Response was not a an array: $r").asOER
+      v <- (a.map(_.dictionary).sequence[Option, Map[String,OEType]] \/> s"Response was not an array of maps: $r").asOER
     } yield v
 
   /**
@@ -72,9 +74,9 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
    * @param offset the number of records to skip
    * @param limit the maximum number of records to return
    * @param order the column name by which to sort the results
-   * @return a List of OEDictionaries, wrapped in an [[FutureEither]]
+   * @return a List of OEDictionaries, wrapped in an [[OEResult]]
    */
-  def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): FutureEither[List[Map[String,OEType]]] = {
+  def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Map[String,OEType]]] = {
 
     for {
       ids <- search(model, domain, offset, limit, order)
@@ -91,11 +93,11 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
    * @param fields the fieldnames and values to write
    * @return a FutureEither containing the id of the new record
    */
-  def create(model: String, fields: Map[String, OEType]): FutureEither[Id] = {
+  def create(model: String, fields: Map[String, OEType]): OEResult[Int] = {
 
     for {
       r <- callMethod(model,"create",OEDictionary(fields))
-      v <- (r.int \/> s"Unexpected response from a create request: $r").asET
+      v <- (r.int \/> s"Unexpected response from a create request: $r").asOER
     } yield v
 
   }
@@ -112,11 +114,11 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
    * @param fields the field names and associated values to update
    * @return a FutureEither[True]
    */
-  def write(model: String, ids: List[Int], fields: Map[String, OEType]): FutureEither[Boolean] = {
+  def write(model: String, ids: List[Int], fields: Map[String, OEType]): OEResult[Boolean] = {
 
     for {
       r <- callMethod(model,"write", ids, OEDictionary(fields))
-      v <- (r.bool \/> s"Expected a Boolean response from a write request, got: $r").asET
+      v <- (r.bool \/> s"Expected a Boolean response from a write request, got: $r").asOER
     } yield v
 
 
@@ -128,11 +130,11 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
    * @param ids the ids of the records to delete
    * @return FutureEither[true]
    */
-  def unlink(model: String, ids: List[Id]): FutureEither[Boolean] = {
+  def unlink(model: String, ids: List[Int]): OEResult[Boolean] = {
 
     for {
       r <- callMethod(model,"unlink",ids)
-      v <- (r.bool \/>"Unexpected response from an unlink request: $b").asET
+      v <- (r.bool \/>"Unexpected response from an unlink request: $b").asOER
     } yield v
 
   }
@@ -145,7 +147,7 @@ case class OESession(uid: EitherT[Future,ErrorMessage,Id], transportAdaptor: OET
    * @param params the method parameters
    * @return an FutureEither[OEType]
    */
-  def callMethod(model: String, methodName: String, params: OEType*): FutureEither[OEType] = {
+  def callMethod(model: String, methodName: String, params: OEType*): OEResult[OEType] = {
 
     for {
      i <- uid

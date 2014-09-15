@@ -10,7 +10,7 @@ import org.scalatest._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import com.tactix4.t4xmlrpc._
+import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * Created with IntelliJ IDEA.
  * User: max
@@ -20,21 +20,22 @@ import com.tactix4.t4xmlrpc._
  */
 class OESessionTestProxy extends FunSuite with LazyLogging with BeforeAndAfterAll {
 
- val conf = ConfigFactory.load()
+  val conf = ConfigFactory.load()
 
-  val username    = "admin"
-  val password    = "admin"
-  val database    = "t4skr_newsdemo"
-  val openerpHost = "10.10.170.22"
-  val openerpPort = 8069
+  val username    = conf.getString("OEServer.username")
+  val password    = conf.getString("OEServer.password")
+  val database    = conf.getString("OEServer.database")
+  val openerpHost = conf.getString("OEServer.hostname")
+  val openerpPort = conf.getInt("OEServer.port")
+
+  val wireMockServer = new WireMockServer(wireMockConfig().port(openerpPort))
+  wireMockServer.start()
 
   val proxy = new OEConnector("http", openerpHost,openerpPort)
-//  val wireMockServer = new WireMockServer(wireMockConfig().port(openerpPort))
-//  wireMockServer.start()
   val session = proxy.startSession(username,password,database)
 
   override def afterAll() {
-//    wireMockServer.shutdown()
+    wireMockServer.shutdown()
   }
 
 
@@ -49,9 +50,13 @@ class OESessionTestProxy extends FunSuite with LazyLogging with BeforeAndAfterAl
     Await.result(newSession.uid.run, 10 seconds)
   }
   test("Invalid protocol returns error"){
-    val newSession = new OEConnector("httpz","localhost",63999).startSession(username,password,database)
-    newSession.uid.bimap(m => logger.debug(s"Hurrah, we got an error: $m"), _ => fail("Should not be logged in"))
-    Await.result(newSession.uid.run, 10 seconds)
+    try {
+      val newSession = new OEConnector("httpz", "localhost", 827342).startSession(username, password, database)
+      newSession.uid.bimap(m => logger.debug(s"Hurrah, we got an error: $m"), _ => fail("Should not be logged in"))
+      Await.result(newSession.uid.run, 10 seconds)
+    } catch {
+      case t:Throwable => println(t.getMessage)
+    }
   }
   test("Incorrect username returns error"){
     val newSession = new OEConnector("http",openerpHost,openerpPort).startSession(username+"fail",password,database)
@@ -115,7 +120,7 @@ class OESessionTestProxy extends FunSuite with LazyLogging with BeforeAndAfterAl
   test("Read from res.partner table") {
     val result = session.read("res.partner", List(16))
 
-    val wait = result.bimap(e => logger.debug(s"Something went wrong: $e"), l => logger.debug(l.toString))
+    val wait = result.bimap(e => fail(s"Something went wrong: $e"), l => logger.debug(l.toString))
 
     Await.result(wait.run, 2 seconds)
   }

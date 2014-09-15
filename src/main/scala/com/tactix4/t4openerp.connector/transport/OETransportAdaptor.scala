@@ -18,8 +18,9 @@
 package com.tactix4.t4openerp.connector.transport
 
 import com.tactix4.t4openerp.connector._
-import scalaz.EitherT
+
 import scala.concurrent.Future
+import scalaz.EitherT
 
 /**
  * Adaptor to be implemented for each transport mechanism supported
@@ -34,7 +35,7 @@ trait OETransportAdaptor {
    * @param params a list of parameters to supply
    * @return A OEResult[OEType] containing the response from the server
    */
-  def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]) : EitherT[Future,ErrorMessage,OEType]
+  def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]) : OEResult[OEType]
   /**
    * send an RPC request over the implementing protocol
    * @param config the [[com.tactix4.t4openerp.connector.transport.OETransportConfig]] to use
@@ -42,7 +43,7 @@ trait OETransportAdaptor {
    * @param params the parameters to supply
    * @return A OEResult[OEType] containing the response from the server
    */
-  def sendRequest(config: OETransportConfig, methodName: String, params: OEType*) : EitherT[Future,ErrorMessage,OEType] = {
+  def sendRequest(config: OETransportConfig, methodName: String, params: OEType*) : OEResult[OEType] = {
     sendRequest(config, methodName,params.toList)
   }
 }

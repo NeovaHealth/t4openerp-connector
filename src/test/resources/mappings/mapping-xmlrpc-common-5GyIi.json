@@ -1,0 +1,19 @@
+{
+  "request" : {
+    "url" : "/xmlrpc/common",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalTo" : "<?xml version='1.0'?><methodCall><methodName>login</methodName><params><param><value><string>databasefail</string></value></param><param><value><string>admin</string></value></param><param><value><string>admin</string></value></param></params></methodCall>"
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "bodyFileName" : "body-xmlrpc-common-5GyIi.json",
+    "headers" : {
+      "Content-Type" : "text/xml",
+      "Content-Length" : "2337",
+      "Server" : "Werkzeug/0.9.4 Python/2.7.5",
+      "Date" : "Mon, 15 Sep 2014 10:05:50 GMT"
+    }
+  }
+}
