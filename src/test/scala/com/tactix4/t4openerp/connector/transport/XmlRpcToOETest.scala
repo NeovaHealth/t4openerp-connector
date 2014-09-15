@@ -6,10 +6,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 import com.tactix4.t4xmlrpc._
-
-/**
- * Created by max on 23/04/14.
- */
+import scala.language.implicitConversions
 
 object XmlRpcGen{
 
@@ -70,15 +67,16 @@ object XmlRpcGen{
 
 }
 class XmlRpcToOETest extends FunSuite with GeneratorDrivenPropertyChecks{
- val xml2oe = new XmlRpcOEAdaptor(None)
- test("Ensure XML2OE encoding and decoding does not lose any precision"){
-   forAll(XmlRpcGen.arbXmlRpc.arbitrary) {
-     original: XmlRpcDataType => {
-       val encoded = xml2oe.XmlRpcToOE.encode(original)
-       val decoded = xml2oe.XmlRpcToOE.decode(encoded)
-       assert(decoded.toString === original.toString)
-     }
-   }
- }
+  import scala.concurrent.ExecutionContext.Implicits.global
+  val xml2oe = new XmlRpcOEAdaptor()
+  test("Ensure XML2OE encoding and decoding does not lose any precision"){
+    forAll(XmlRpcGen.arbXmlRpc.arbitrary) {
+      original: XmlRpcDataType => {
+        val encoded = xml2oe.XmlRpcToOE.encode(original)
+        val decoded = xml2oe.XmlRpcToOE.decode(encoded)
+        assert(decoded.toString === original.toString)
+      }
+    }
+  }
 
 }
