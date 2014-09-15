@@ -36,7 +36,7 @@ Add the following to your build.sbt:
 
     val ids = session.search("res.partner", "name" ilike "peter")
 
-    ids.biMap(
+    ids.bimap(
       (error:String)  => logger.error(s"That didn't work: $error" ),
       (ids:List[Int]) => logger.info(s"The ids: $ids"))
 
