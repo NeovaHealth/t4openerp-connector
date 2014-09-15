@@ -7,6 +7,13 @@
 A library designed to connect to an OpenERP server and provide access to a commonly
 used subset of OpenERP's API.
 
+## 2.0.1 Release
+
+Using newer 2.0.2 version of [t4xmlrpc](https://github.com/Tactix4/t4xmlrpc). 
+Removed various custom data structures favouring the scalaz versions instead.
+The execution context is now an implicit parameter, allowing you to provide
+your own context.
+ 
 ## 2.0 Release
 
 Major rewrite and fundamental change of approach. Ideas shamelessly lifted from the
@@ -17,11 +24,13 @@ purely functional, with no throwing of exceptions and on the whole significantly
 
 Add the following to your build.sbt:
 
-  ```"com.tactix4" %% "t4openerp-connector" % "2.0.0"```
+  ```"com.tactix4" %% "t4openerp-connector" % "2.0.1"```
 
 ## Use Case
 
 ```scala
+
+    import scala.concurrent.ExecutionContext.Implicits.global
 
     val session = new OpenERPConnector("http", "localhost",8069).startSession(username,password,database)
 
