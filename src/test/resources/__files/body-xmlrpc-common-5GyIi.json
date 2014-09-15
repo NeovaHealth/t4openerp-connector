@@ -1,0 +1,49 @@
+<?xml version='1.0'?>
+<methodResponse>
+<fault>
+<value><struct>
+<member>
+<name>faultCode</name>
+<value><string>FATAL:  database "t4skr_btuhdemofail" does not exist
+</string></value>
+</member>
+<member>
+<name>faultString</name>
+<value><string>Traceback (most recent call last):
+  File "/opt/openerp/server/openerp/service/wsgi_server.py", line 82, in xmlrpc_return
+    result = openerp.netsvc.dispatch_rpc(service, method, params)
+  File "/opt/openerp/server/openerp/netsvc.py", line 296, in dispatch_rpc
+    result = ExportService.getService(service_name).dispatch(method, params)
+  File "/opt/openerp/server/openerp/service/web_services.py", line 433, in dispatch
+    return fn(*params)
+  File "/opt/openerp/server/openerp/service/web_services.py", line 438, in exp_login
+    res = security.login(db, login, password)
+  File "/opt/openerp/server/openerp/service/security.py", line 29, in login
+    pool = pooler.get_pool(db)
+  File "/opt/openerp/server/openerp/pooler.py", line 49, in get_pool
+    return get_db_and_pool(db_name, force_demo, status, update_module)[1]
+  File "/opt/openerp/server/openerp/pooler.py", line 33, in get_db_and_pool
+    registry = RegistryManager.get(db_name, force_demo, status, update_module)
+  File "/opt/openerp/server/openerp/modules/registry.py", line 203, in get
+    update_module)
+  File "/opt/openerp/server/openerp/modules/registry.py", line 219, in new
+    registry = Registry(db_name)
+  File "/opt/openerp/server/openerp/modules/registry.py", line 76, in __init__
+    cr = self.db.cursor()
+  File "/opt/openerp/server/openerp/sql_db.py", line 484, in cursor
+    return Cursor(self.__pool, self.dbname, serialized=serialized)
+  File "/opt/openerp/server/openerp/sql_db.py", line 182, in __init__
+    self._cnx = pool.borrow(dsn(dbname))
+  File "/opt/openerp/server/openerp/sql_db.py", line 377, in _locked
+    return fun(self, *args, **kwargs)
+  File "/opt/openerp/server/openerp/sql_db.py", line 440, in borrow
+    result = psycopg2.connect(dsn=dsn, connection_factory=PsycoConnection)
+  File "/opt/venv/lib/python2.7/site-packages/psycopg2/__init__.py", line 164, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, async=async)
+OperationalError: FATAL:  database "t4skr_btuhdemofail" does not exist
+
+</string></value>
+</member>
+</struct></value>
+</fault>
+</methodResponse>

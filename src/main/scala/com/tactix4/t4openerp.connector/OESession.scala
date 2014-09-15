@@ -17,63 +17,37 @@
 
 package com.tactix4.t4openerp.connector
 
-import com.tactix4.t4openerp.connector.transport._
 import com.tactix4.t4openerp.connector.domain.Domain
-import com.typesafe.scalalogging.slf4j.Logging
+import com.tactix4.t4openerp.connector.transport._
+import com.typesafe.scalalogging.slf4j.LazyLogging
+
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
-import scala.concurrent.Future
-import scalaz._
-import Scalaz._
-
-/**
- * An OpenERPSession represents a current session to an OpenERP server.
- *
- * It is the main class that a user will interact with - allowing access to common ORM methods
- *
- * @example {{{
- *                     val session = new OpenERPConnector("http", openerpHost,openerpPort).startSession(username,password,database)
- *
- *                     val result = for {
- *                        s <- session
- *                        id <- s.read('res.users', 1)
- *                     } yield id
- *
- *                     result.onComplete((value: Try[ResultType]) => value match {
- *                        case Success(s) => s.foreach(_ foreach println)
- *                        case Failure(f) => println(f)
- *                     })
- *
- *          }}}
- */
+import scalaz.EitherT
+import scalaz.std.option._
+import scalaz.std.option.optionSyntax._
+import scalaz.std.string._
+import scalaz.std.list._
+import scalaz.syntax.traverse._
 
 
-case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, config: OETransportConfig, database: String, password: String, context: OEContext = OEContext(true, "en_GB", "Europe/London")) extends Logging {
-
-  def isLoggedIn: Future[Boolean] = uid.isResult
+case class OESession(uid: OEResult[Int], transportAdaptor: OETransportAdaptor, config: OETransportConfig, database: String, password: String, context: OEContext = OEContext(true, "en_GB", "Europe/London"))(implicit ec:ExecutionContext) extends LazyLogging {
 
   /**
-   * Searches the openerp server with the following parameters
-   *
-   * @param domain an [[scala.Option]] contain a [[com.tactix4.t4openerp.connector.domain.Domain]] object - default is None
-   * @param offset an [[scala.Int]] indicating the number of records to skip - default is 0
-   * @param limit an [[scala.Int]] indicating the maximum number of records to return - default is 0
-   * @param order a [[java.lang.String]] indicating the column name by which to sort the records - server default is "id"
-   * @return a [[com.tactix4.t4openerp.connector.transport.FutureResponse]] containing a [[scala.collection.immutable.List]] of type [[scala.Int]] representing the ids of the matching records
-   * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[OETransportAdaptor]]
+   * Search the supplied model with the optional domain
+   * @param model the model to search
+   * @param domain the domain to apply to the search
+   * @param offset the number of records to skip
+   * @param limit a limit on the number of results
+   * @param order the field name by which to order the results
+   * @return an [[OEResult[List[Int]]]] of the resultant Int
    */
+  def search(model: String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Int]] = {
 
-  def search(model: String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = ""): OEResponse[List[Id]] = {
-
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "search", domain.map(_.encode) | "", offset, limit, order, context))
-
-    result.ffMap(r => {
-      val idsO = for {
-        a <- r.array
-        z <- a.map(_.int).sequence[Option, Int]
-      } yield z.right[ErrorMessage]
-
-      idsO | s"Unexpected response from a search request: $r".left[List[Id]]
-    })
+    for {
+      r <- callMethod(model, "search", domain, offset, limit, order)
+      v <- (r.array.flatMap(_.map(_.int).sequence[Option,Int]) \/> s"Unexpected response from a search request: $r").asOER
+    } yield v
 
   }
 
@@ -81,25 +55,16 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * Read/fetch the supplied ids from the openERP server
    *
    * @param ids a [[scala.collection.immutable.List]] of type [[scala.Int]] representing the ids of the records to read
-   * @param fieldNames a [[scala.collection.immutable.List[ S t r i n g]]]
-   * @return
-   * @throws OpenERPException if the response from the server does not meet our expectations - or if we receive an exception from the [[OETransportAdaptor]]
+   * @param fieldNames a [[scala.collection.immutable.List[String]]] specifying the names of the fields to return
+   * @return a List of OEDictionaries, wrapped in an [[OEResult]]
    */
 
-  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): OEResponse[List[OEMap]] = {
-
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "read", ids, fieldNames, context))
-
-    result.ffMap(r => {
-      val rec = for {
-        array <- r.array
-        s <- array.flatMap(_.dict.map(OEMap.apply)).some
-      } yield s.right[ErrorMessage]
-
-      rec | s"Unexpected response from a read request: $result".left[List[OEMap]]
-    })
-
-  }
+  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): OEResult[List[Map[String,OEType]]] =
+    for {
+      r <- callMethod(model, "read", ids, fieldNames)
+      a <- (r.array \/> s"Response was not a an array: $r").asOER
+      v <- (a.map(_.dictionary).sequence[Option, Map[String,OEType]] \/> s"Response was not an array of maps: $r").asOER
+    } yield v
 
   /**
    * Combines the search and the read operations for convenience
@@ -109,11 +74,13 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * @param offset the number of records to skip
    * @param limit the maximum number of records to return
    * @param order the column name by which to sort the results
-   * @return a [[scala.concurrent.Future]] containing the results of the query
+   * @return a List of OEDictionaries, wrapped in an [[OEResult]]
    */
-  def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResponse[List[OEMap]] = {
+  def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Map[String,OEType]]] = {
+
     for {
       ids <- search(model, domain, offset, limit, order)
+      if ids.nonEmpty
       result <- read(model, ids, fields)
     } yield result
 
@@ -124,14 +91,15 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * Create a new record
    * @param model the model within which to create the record
    * @param fields the fieldnames and values to write
-   * @return a Future containing the id of the new record
-   * @throws OpenERPException if the creation fails
+   * @return a FutureEither containing the id of the new record
    */
-  def create(model: String, fields: Map[String, OEType]): OEResponse[Id] = {
+  def create(model: String, fields: Map[String, OEType]): OEResult[Int] = {
 
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "create", OEMap(fields), context))
+    for {
+      r <- callMethod(model,"create",OEDictionary(fields))
+      v <- (r.int \/> s"Unexpected response from a create request: $r").asOER
+    } yield v
 
-    result.ffMap(t => t.int.map(_.right[ErrorMessage]) | s"Unexpected response from a create request: $t".left[Id])
   }
 
   /**
@@ -144,14 +112,14 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * @param model the model to update
    * @param ids the ids of the records to update
    * @param fields the field names and associated values to update
-   * @return a Future[True]
-   * @throws OpenERPException if the write fails
+   * @return a FutureEither[True]
    */
-  def write(model: String, ids: List[Int], fields: Map[String, OEType]): OEResponse[Boolean] = {
+  def write(model: String, ids: List[Int], fields: Map[String, OEType]): OEResult[Boolean] = {
 
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "write", ids, OEMap(fields), context))
-
-    result.ffMap(b => b.bool.map(_.right[ErrorMessage]) | s"Unexpected response from a write request: $b".left[Boolean])
+    for {
+      r <- callMethod(model,"write", ids, OEDictionary(fields))
+      v <- (r.bool \/> s"Expected a Boolean response from a write request, got: $r").asOER
+    } yield v
 
 
   }
@@ -160,22 +128,31 @@ case class OESession(uid: OEResponse[Id], transportAdaptor: OETransportAdaptor, 
    * Delete records from model with given ids
    * @param model the model to delete from
    * @param ids the ids of the records to delete
-   * @return Future[true]
+   * @return FutureEither[true]
    */
-  def unlink(model: String, ids: List[Id]): OEResponse[Boolean] = {
+  def unlink(model: String, ids: List[Int]): OEResult[Boolean] = {
 
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "unlink", ids, context))
+    for {
+      r <- callMethod(model,"unlink",ids)
+      v <- (r.bool \/>"Unexpected response from an unlink request: $b").asOER
+    } yield v
 
-    result.ffMap(b => b.bool.map(
-      _.right[ErrorMessage]) | s"Unexpected response from an unlink request: $b".left[Boolean])
   }
 
 
-  def callMethod(model: String, methodName: String, params: OEType*): OEResponse[OEType] = {
+  /**
+   * Call an arbitrary method
+   * @param model the model to call the method on
+   * @param methodName the method to call
+   * @param params the method parameters
+   * @return an FutureEither[OEType]
+   */
+  def callMethod(model: String, methodName: String, params: OEType*): OEResult[OEType] = {
 
-    uid.flatMap(i => {
-      transportAdaptor.sendRequest(config, "execute", List[OEType](database, i, password, model, methodName) ++ params.toList ++ List[OEType](context))
-    })
+    for {
+     i <- uid
+     r <- transportAdaptor.sendRequest(config, "execute", List[OEType](database, i, password ,model, methodName) ++ params.toList ++ List[OEType](context))
+    } yield r
 
   }
 

@@ -17,46 +17,34 @@
 
 package com.tactix4.t4openerp.connector.codecs
 
-import scala.annotation.implicitNotFound
-
-import scala.language.implicitConversions
+import com.tactix4.t4openerp.connector.CodecResult
 import com.tactix4.t4openerp.connector.transport.OEType
+
+import scala.annotation.implicitNotFound
+import scala.language.implicitConversions
 
 /**
  *
- * Typeclass for converting to-from the transport data type
- * Any Transport implementation should instantiate an object of type [[com.tactix4.t4openerp.connector.transport.TransportDataConverter[TheirType]]]
- * and provide the read/write methods
-
+ * Encoding/Decoding Type Classes
  * @author max@tactix4.com
  *         24/08/2013
  */
-@implicitNotFound(msg = "Can not find OEDataConverter for type ${T}")
-trait OEDataConverter[T] extends OEDataDecoder[T] with OEDataEncoder[T]
 
 @implicitNotFound(msg = "Can not find OEDataDecoder for type ${T}")
 trait OEDataDecoder[T]{
-  def decode(obj: OEType): DecodeResult[T]
+  def decode(obj: OEType): CodecResult[T]
 }
-
+@implicitNotFound(msg = "Can not find OEDataEncoder for type ${T}")
 trait OEDataEncoder[T]{
-  def encode(obj: T): OEType
+  def encode(obj: T): CodecResult[OEType]
 }
 object OEDataDecoder {
-  def apply[T](r: OEType => DecodeResult[T]) : OEDataDecoder[T] = new OEDataDecoder[T] {
-    def decode(obj: OEType): DecodeResult[T] = r(obj)
+  def apply[T](r: OEType => CodecResult[T]) : OEDataDecoder[T] = new OEDataDecoder[T] {
+    def decode(obj: OEType): CodecResult[T] = r(obj)
   }
 }
 object OEDataEncoder{
-  def apply[T](r: T => OEType) : OEDataEncoder[T] = new OEDataEncoder[T] {
-    def encode(obj: T): OEType = r(obj)
+  def apply[T](r: T => CodecResult[OEType]) : OEDataEncoder[T] = new OEDataEncoder[T] {
+    def encode(obj: T): CodecResult[OEType] = r(obj)
   }
-}
-
-class EncodeOps[T:OEDataEncoder](any: T) {
-  def encode: OEType = implicitly[OEDataEncoder[T]].encode(any)
-}
-class DecodeOps(any: OEType) {
-   def decodeAs[T:OEDataDecoder] : DecodeResult[T] = implicitly[OEDataDecoder[T]].decode(any)
-
 }

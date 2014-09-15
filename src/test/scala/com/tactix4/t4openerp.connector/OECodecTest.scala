@@ -56,13 +56,13 @@ class OECodecTest extends FunSuite with PropertyChecks with ShouldMatchers{
   test("Test encoding the decoding"){
 
     forAll(CodecTestClassGen){ randomClass =>
-      val encodedClass = randomClass.encode
-      val decodedClass = encodedClass.decodeAs[CodecTestClass]
+      val result = for {
+        encoded <- randomClass.encode
+        decoded <- encoded.decodeAs[CodecTestClass]
+      } yield decoded == randomClass
 
-      decodedClass.toOption should be === Some(randomClass)
-
+      assert(result.getOrElse(false), "The encoded -> decoded class did not match original")
     }
   }
-
 
 }

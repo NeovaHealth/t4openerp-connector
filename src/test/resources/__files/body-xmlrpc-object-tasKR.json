@@ -1,0 +1,21 @@
+<?xml version='1.0'?>
+<methodResponse>
+<params>
+<param>
+<value><struct>
+<member>
+<name>lang</name>
+<value><string>en_US</string></value>
+</member>
+<member>
+<name>tz</name>
+<value><boolean>0</boolean></value>
+</member>
+<member>
+<name>id</name>
+<value><int>1</int></value>
+</member>
+</struct></value>
+</param>
+</params>
+</methodResponse>

@@ -18,41 +18,39 @@
 package com.tactix4.t4openerp.connector
 
 import com.tactix4.t4openerp.connector.transport._
-import com.typesafe.scalalogging.slf4j.Logging
-import scala.language.implicitConversions
-import scalaz._
-import Scalaz._
+import com.typesafe.scalalogging.slf4j.LazyLogging
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.language.{implicitConversions, postfixOps}
+import scalaz.EitherT
+import scalaz.std.option._
+import scalaz.std.option.optionSyntax._
+import scalaz.syntax.traverse._
+import scalaz.std.list._
 
 /**
  * Entry point into library and used to create an OpenERPSession
  * @param protocol the protocol with which to connect
  * @param host the openerp host to connect to
- * @param port the port on whcih the openerp host is listening for rpc requests
+ * @param port the port on which the openerp host is listening for rpc requests
  *
  * @author max@tactix4.com
  *         14/07/2013
  */
-class OEConnector(protocol: String, host: String, port: Int) extends Logging {
-
+class OEConnector(protocol: String, host: String, port: Int)(implicit ec:ExecutionContext) extends LazyLogging {
 
   val config = OETransportConfig(protocol, host, port, RPCService.RPC_OBJECT.toString)
-  val transportClient:OETransportAdaptor = XmlRpcOEAdaptor
+  val transportClient:OETransportAdaptor = new XmlRpcOEAdaptor()
 
-
-  def getDatabaseList:FutureResponse[ErrorMessage,List[String]] ={
+  def getDatabaseList:OEResult[List[String]] ={
     val conf = config.copy(path = RPCService.RPC_DATABASE.toString)
 
-    transportClient.sendRequest(conf, "list",Nil).fold(
-        (error: String) => error.left[List[String]])(
-        (result: OEType) => {
-          val dbList = for {
-            a <- result.array
-            r = a.map(_.toString)
-          } yield r.right[ErrorMessage]
+    for {
+      t <- transportClient.sendRequest(conf, "list",Nil)
+      a <- (t.array \/> "Response was not an array").asOER
+      s <- (a.map(_.string).sequence[Option, String] \/> "Response was not an array of strings").asOER
+    } yield s
 
-          dbList |  s"Unexpected result when querying database list: $result".left[List[String]]
-        }
-    )
   }
 
   /**
@@ -67,23 +65,14 @@ class OEConnector(protocol: String, host: String, port: Int) extends Logging {
    * @param username the username to use to login to OpenERP
    * @param password the password to use to login to OpenERP
    * @param database the database to connect to
-   * @return a Future[OpenERPSession] which on success represents the session of the logged in user.
+   * @return an OESession
    */
   def startSession(username: String, password: String, database: String,context: Option[OEContext] = None) : OESession= {
     val conf = config.copy(path = RPCService.RPC_COMMON.toString)
 
-    val uid = transportClient.sendRequest(conf, "login", database, username, password).fold(
-          (error:String) => error.left[Int])(
-          (v: OEType) => {
-            if(v.isBool) s"login failed with username: $username and password: $password".left
-            else if(v.isNumber){
-              (~v.int).right[ErrorMessage]
-            }
-            else{
-              s"Unexpected response from server: $v".left[Int]
-            }
-          })
-
+    val uid = transportClient.sendRequest(conf, "login", database, username, password).flatMap(
+      _.int \/> "Login failed" asOER
+    )
     OESession(uid,transportClient,config,database,password,context|OEContext())
   }
 }

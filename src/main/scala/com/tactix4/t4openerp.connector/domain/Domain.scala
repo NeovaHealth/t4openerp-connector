@@ -17,10 +17,13 @@
 
 package com.tactix4.t4openerp.connector.domain
 
-import com.tactix4.t4openerp.connector.transport._
 import com.tactix4.t4openerp.connector._
-import scala.language.implicitConversions
 import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
+import com.tactix4.t4openerp.connector.transport._
+
+import scala.annotation.tailrec
+import scala.language.implicitConversions
+import scalaz._
 
 /**
  * A trait to specify Domains for [[com.tactix4.t4openerp.connector.OESession]] queries
@@ -49,8 +52,6 @@ import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
  * Domain's subclasses [[com.tactix4.t4openerp.connector.domain.AND]] and [[com.tactix4.t4openerp.connector.domain.OR]] build up tree structures
  * of [[com.tactix4.t4openerp.connector.domain.DomainTuple]] expressions, which are constructed from a fieldName, an operator and a value.
  *
- * [[com.tactix4.t4openerp.connector.domain.NOT]] can be applied only to a single DomainTuple and for that reason its factory method is found in
- * DomainTuple rather than Domain
  *
  *
  *
@@ -76,8 +77,8 @@ sealed trait Domain {
 
 /**
  * A class to represent a conjunction of two Domains
- * @param left
- * @param right
+ * @param left the left hand Domain
+ * @param right the right hand Domain
  */
 case class AND(left: Domain, right: Domain) extends Domain {
   override def toString = left + "," + right
@@ -239,40 +240,18 @@ object Domain {
   implicit def StringToDomainOperator(s: String): DomainOperators = new DomainOperators(s)
 
 
-  /**
-   * Provides the OEDataWriter[Domain] implementation which enables the [[com.tactix4.t4openerp.connector.transport.PimpedAny]]
-   * call to .toTransportDataType()
-   */
-  implicit val DomainToTransportData  = OEDataEncoder[Domain]{ obj =>
+  implicit val DomainToOEType = OEDataEncoder[Domain]{ obj =>
+      @tailrec
       def loopTR(tree:List[Domain])(acc:List[OEType]) : List[OEType] = {
         tree match{
-          case Nil => acc
-          case (e:DomainTuple)::rs => loopTR(rs)(OEArray(List(e.value, e.operator.op, e.fieldName)) :: acc)
+          case Nil => acc.reverse
+          case (e:DomainTuple)::rs => loopTR(rs)(OEArray(e.fieldName, e.operator.op, e.value) :: acc)
           case (e:AND)::rs => loopTR(e.left :: e.right :: rs)("&amp;" :: acc)
           case (e:OR)::rs => loopTR(e.left :: e.right :: rs)("|" :: acc)
           case (e:NOT)::rs => loopTR(rs)("!" :: acc)
         }
       }
-      OEArray(loopTR(List(obj))(Nil))
+      \/-(OEArray(loopTR(List(obj))(Nil)))
    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

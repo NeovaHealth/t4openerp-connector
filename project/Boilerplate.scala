@@ -14,10 +14,8 @@ object Boilerplate {
     val generatedDecodeOE = write(dir / "com" / "tactix4" / "t4openerp-connector" / "GeneratedDecodeOE.scala", genDecodeOE)
 
     val generatedEncodeOE = write(dir / "com" / "tactix4" / "t4openerp-connector" / "GeneratedEncodeOE.scala", genEncodeOE)
-    //
-    //    val generatedCodecJson = write(dir / "argonaut" / "GeneratedCodecJsons.scala", genCodecJsons)
 
-    Seq(generatedDecodeOE, generatedEncodeOE) //, generatedCodecJson)
+    Seq(generatedDecodeOE, generatedEncodeOE)
   }
 
   def header = {
@@ -40,6 +38,8 @@ object Boilerplate {
 
   def tuples(arity: Int): String = (1 to arity).map(n => "%sn -> t._%d.encode".format(arityChars(n).toLower, n)).mkString(", ")
 
+  def encodeTupleValues(arity: Int): String = (1 to arity).map(n => "t._%d.encode".format(n)).mkString(", ")
+
   def jsonStringParamNames(arity: Int): String = (1 to arity).map(n => "%sn".format(arityChars(n).toLower)).mkString(", ")
 
  def genEncodeOE = {
@@ -48,8 +48,12 @@ object Boilerplate {
     def content = {
       val encode1M =
         """|
+          |
           | def encode1M[A:OEDataEncoder,X](f: X => A)(an: String): OEDataEncoder[X] =
-          |     OEDataEncoder[X](x => OEMap(an -> f(x) map (_.encode)))
+          |   OEDataEncoder[X](x => {
+          |     val t = f(x).encode
+          |     t.map(e => OEDictionary(an -> e) )
+          |   })
           | """.stripMargin
 
 
@@ -59,14 +63,16 @@ object Boilerplate {
             |  def encode%sM[%s, X](f: X => (%s))(%s): OEDataEncoder[X] =
             |     OEDataEncoder[X](x => {
             |       val t = f(x)
-            |       OEMap(%s)
+            |       val e = List(%s).sequence[CodecResult,OEType]
+            |       e.map(l => OEDictionary(List(%s) zip l toMap))
             |     })
             | """.format(
             arity,
             encodeOEContextArities(arity),
             functionTypeParameters(arity),
             jsonStringParams(arity),
-            tuples(arity)
+            encodeTupleValues(arity),
+            jsonStringParamNames(arity)
           ).stripMargin
       }
 
@@ -75,8 +81,12 @@ object Boilerplate {
 
    header +
      """|
-       |import com.tactix4.t4openerp.connector.transport.OEMap
-       |import com.tactix4.t4openerp.connector.pimpEncoder
+       |import com.tactix4.t4openerp.connector.transport.OEDictionary
+       |import com.tactix4.t4openerp.connector.transport.OEType
+       |import com.tactix4.t4openerp.connector.{CodecResult}
+       |import com.tactix4.t4openerp.connector._
+       |import scala.language.postfixOps
+       |
        |object GeneratedEncodeOE {
        |%s
        |}
@@ -91,10 +101,10 @@ object Boilerplate {
         """|
           |  def decode1M[A: OEDataDecoder, X](f: A => X)(an: String): OEDataDecoder[X] =
           |    OEDataDecoder(c => {
-          |     val r = c.dict.map(d => for {
+          |     val r = c.asDictionary(d => for {
           |      f1 <- (d.get(an) | OENull).decodeAs[A]
           |     } yield f(f1))
-          |     r | DecodeResult.fail("Unable to decode")
+          |     r | s"Unable to decode: $c".left
           |     })
           |
           | """.stripMargin
@@ -120,11 +130,11 @@ object Boilerplate {
           """|
             |  def decode%sM[%s, X](f: (%s) => X)(%s): OEDataDecoder[X] =
             |    OEDataDecoder(c => {
-            |     val s = c.dict.map( d => for {
+            |     val s = c.asDictionary( d => for {
             |%s
             |     } yield f(%s))
             |
-            |     s | DecodeResult.fail("Unable to decode")
+            |     s | s"Unable to decode $c".left
             |   })
             | """.format(
             arity,
@@ -141,7 +151,6 @@ object Boilerplate {
 
     header +
       """|
-        |import com.tactix4.t4openerp.connector.pimpDecoder
         |
         |object GeneratedDecodeOE {
         |%s

@@ -1,0 +1,19 @@
+{
+  "request" : {
+    "url" : "/xmlrpc/object",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalTo" : "<?xml version='1.0'?><methodCall><methodName>execute</methodName><params><param><value><string>database</string></value></param><param><value><int>1</int></value></param><param><value><string>admin</string></value></param><param><value><string>res.partner</string></value></param><param><value><string>read</string></value></param><param><value><array><data><value><int>3</int></value><value><int>5</int></value><value><int>167</int></value><value><int>158</int></value><value><int>187</int></value><value><int>136</int></value><value><int>145</int></value><value><int>48</int></value><value><int>1</int></value><value><int>100</int></value></data></array></value></param><param><value><array><data><value><string>category_id</string></value></data></array></value></param><param><value><struct><member><name>activeTest</name><value><boolean>1</boolean></value></member><member><name>lang</name><value><string>en_GB</string></value></member><member><name>tz</name><value><string>Europe/London</string></value></member></struct></value></param></params></methodCall>"
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "bodyFileName" : "body-xmlrpc-object-JQmQV.json",
+    "headers" : {
+      "Content-Type" : "text/xml",
+      "Content-Length" : "2011",
+      "Server" : "Werkzeug/0.9.4 Python/2.7.5",
+      "Date" : "Mon, 15 Sep 2014 10:05:52 GMT"
+    }
+  }
+}

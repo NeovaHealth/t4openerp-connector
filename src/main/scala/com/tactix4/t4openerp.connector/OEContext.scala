@@ -16,9 +16,8 @@
  */
 
 package com.tactix4.t4openerp.connector
-import com.tactix4.t4openerp.connector.transport._
-import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
 import com.tactix4.t4openerp.connector.codecs.GeneratedEncodeOE._
+
 import scala.language.implicitConversions
 
 /**
@@ -37,8 +36,7 @@ case class OEContext(activeTest: Boolean = true, lang: String = "en_GB", timezon
  */
 object OEContext{
 
-  implicit def OEContextToOEType(c: OEContext):OEType = c.encode
-  implicit val oeContextEncoder = encode3M((c: OEContext) => (c.activeTest,c.lang,c.timezone))("activeTest","lang","timezone")
+  implicit val oeContextEncoder = encode3M((c: OEContext) => (c.activeTest,c.lang,c.timezone))("activeTest","lang","tz")
 }
 
 
