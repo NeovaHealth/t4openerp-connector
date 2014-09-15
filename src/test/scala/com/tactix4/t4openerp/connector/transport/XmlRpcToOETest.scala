@@ -2,14 +2,11 @@ package com.tactix4.t4openerp.connector.transport
 
 import org.scalatest.FunSuite
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalacheck.{Choose, Arbitrary, Gen}
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 import com.tactix4.t4xmlrpc._
-
-/**
- * Created by max on 23/04/14.
- */
+import scala.language.implicitConversions
 
 object XmlRpcGen{
 
@@ -21,7 +18,7 @@ object XmlRpcGen{
   val doubleGen : Gen[XmlRpcDouble] = arbDouble.arbitrary.map(XmlRpcDouble)
   val stringGen : Gen[XmlRpcString] = arbString.arbitrary.map(XmlRpcString)
   val boolGen : Gen[XmlRpcBoolean]  = arbBool.arbitrary.map(XmlRpcBoolean)
-  val base64Gen : Gen[XmlRpcBase64] = arbArray[Byte].arbitrary.map(XmlRpcBase64)
+  val base64Gen : Gen[XmlRpcBase64] = arbContainer[Array,Byte].arbitrary.map(XmlRpcBase64)
   val dateGen : Gen[XmlRpcDate] = arbDate.arbitrary.map(XmlRpcDate)
   def arrayGen(depth:Int) : Gen[XmlRpcArray] = {
     if(depth == 0) {
@@ -70,14 +67,16 @@ object XmlRpcGen{
 
 }
 class XmlRpcToOETest extends FunSuite with GeneratorDrivenPropertyChecks{
- test("Ensure XML2OE encoding and decoding does not lose any precision"){
-   forAll(XmlRpcGen.arbXmlRpc.arbitrary) {
-     original: XmlRpcDataType => {
-       val encoded = XmlRpcOEAdaptor.XmlRpcToOE.encode(original)
-       val decoded = XmlRpcOEAdaptor.XmlRpcToOE.decode(encoded)
-       assert(decoded.toString === original.toString)
-     }
-   }
- }
+  import scala.concurrent.ExecutionContext.Implicits.global
+  val xml2oe = new XmlRpcOEAdaptor()
+  test("Ensure XML2OE encoding and decoding does not lose any precision"){
+    forAll(XmlRpcGen.arbXmlRpc.arbitrary) {
+      original: XmlRpcDataType => {
+        val encoded = xml2oe.XmlRpcToOE.encode(original)
+        val decoded = xml2oe.XmlRpcToOE.decode(encoded)
+        assert(decoded.toString === original.toString)
+      }
+    }
+  }
 
 }

@@ -19,6 +19,9 @@ package com.tactix4.t4openerp.connector.transport
 
 import com.tactix4.t4openerp.connector._
 
+import scala.concurrent.Future
+import scalaz.EitherT
+
 /**
  * Adaptor to be implemented for each transport mechanism supported
  *  @author max@tactix4.com

@@ -17,17 +17,14 @@
 
 package com.tactix4.t4openerp.connector.transport
 
-import com.tactix4.t4xmlrpc._
 import com.tactix4.t4openerp.connector._
+import com.tactix4.t4xmlrpc._
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
-import com.typesafe.scalalogging.slf4j.Logging
-
-import scalaz.syntax.id._
-import scalaz.syntax.validation._
-
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.language.implicitConversions
-import scala.annotation.tailrec
+import scalaz.syntax.either._
+import scalaz.syntax.std.option._
 
 /**
  * Implementation of the OpenERPOERPAdaptor and TransportDataConverter
@@ -35,15 +32,17 @@ import scala.annotation.tailrec
  * @author max@tactix4.com
  *         7/12/13
  */
-object XmlRpcOEAdaptor extends OETransportAdaptor with XmlRpcResponses with Logging{
-
-  
-  implicit def OpenERPTransportConfig2XmlRpcConfig(config:OETransportConfig):XmlRpcConfig =  XmlRpcConfig(config.protocol, config.host, config.port, config.path, config.headers)
+class XmlRpcOEAdaptor()(implicit ec:ExecutionContext) extends OETransportAdaptor with LazyLogging {
 
 
-   implicit object XmlRpcToOE {
+  val client = new XmlRpcClient()
 
-     def encode(obj: XmlRpcDataType): OEType = obj.fold(
+  implicit def OpenERPTransportConfig2XmlRpcConfig(config: OETransportConfig): XmlRpcConfig = XmlRpcConfig(config.protocol, config.host, config.port, config.path, config.headers)
+
+
+  implicit object XmlRpcToOE {
+
+    def encode(obj: XmlRpcDataType): OEType = obj.fold(
       b => OEBoolean(b),
       i => OENumber(i),
       d => OENumber(d),
@@ -52,35 +51,28 @@ object XmlRpcOEAdaptor extends OETransportAdaptor with XmlRpcResponses with Logg
       s => OEString(s),
       a => OEArray(a.map(encode)),
       s => OEDictionary(s.mapValues(encode))
-     )
+    )
 
-     def decode(obj: OEType): XmlRpcDataType = obj.fold(
-       b => XmlRpcBoolean(b),
-       d => if(d.scale == 0)XmlRpcInt(d.intValue()) else XmlRpcDouble(d.doubleValue()),
-       s => XmlRpcString(s),
-       a => XmlRpcArray(a.map(decode)),
-       m => XmlRpcStruct(m.mapValues(decode)),
-       _ => XmlRpcBoolean(false))
+    def decode(obj: OEType): XmlRpcDataType = obj.fold(
+      b => XmlRpcBoolean(b),
+      d => if (d.scale == 0) XmlRpcInt(d.intValue()) else XmlRpcDouble(d.doubleValue()),
+      s => XmlRpcString(s),
+      a => XmlRpcArray(a.map(decode)),
+      m => XmlRpcStruct(m.mapValues(decode)),
+      _ => XmlRpcBoolean(false))
 
-   }
+  }
 
 
-   override def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]): FutureResult[ErrorMessage,OEType] = {
+  override def sendRequest(config: OETransportConfig, methodName: String, params: List[OEType]): OEResult[OEType] = {
 
-     val ps = params.map(XmlRpcToOE.decode)
+    client.request(OpenERPTransportConfig2XmlRpcConfig(config), methodName, params.map(XmlRpcToOE.decode)).fold(
+      (fault: XmlRpcResponseFault) => fault.toString().left[OEType],
+      (normal: XmlRpcResponseNormal) => normal.params.flatMap(_.headOption.map(XmlRpcToOE.encode) \/> "Unexpected result from OpenERP Server: $r")
+    ).recover{
+      case e: Throwable =>  e.getMessage.left[OEType]
+    }
 
-     XmlRpcClient.request(OpenERPTransportConfig2XmlRpcConfig(config), methodName, ps).map(_.fold(
-       (f: XmlRpcClient.XmlRpcResponseFault) => f.toString().failure[OEType],
-       (n: XmlRpcClient.XmlRpcResponseNormal) => {
-         n.params.headOption.map(XmlRpcToOE.encode).fold(
-          s"Unexpected result from OpenERP Server: $n".failure[OEType])(
-          _.success[String])
-       })) recover {
-       case e: Throwable => e.getMessage.failure[OEType]
-     }
-   }
-  
+  }
 
-                       
-
- }
+}

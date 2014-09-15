@@ -16,8 +16,7 @@
  */
 
 package com.tactix4.t4openerp.connector.transport
-
-import scalaz.{Semigroup, Monoid}
+import scalaz.Monoid
 
 
 /**
@@ -101,27 +100,21 @@ case object OENull extends OEType
 object OEArray{
   def apply(l:List[OEType]) : OEArray = new OEArray(l)
   def apply(l:OEType*) : OEArray = new OEArray(l.toList)
-  def unapplySeq(a: OEArray) : Option[List[OEType]] = Some(a.value)
+  def unapplySeq(a:OEArray) : Option[List[OEType]] = Some(a.value)
 
-  val monoidInstance = new Monoid[OEArray]{
+  implicit val monoidInstance = new Monoid[OEArray]{
     override def zero: OEArray = OEArray(Nil)
     override def append(f1: OEArray, f2: => OEArray): OEArray = OEArray(f1.value ++ f2.value)
-  }
-  implicit val semiGroupInstance = new Semigroup[OEArray] {
-    override def append(f1: OEArray, f2: => OEArray):OEArray = OEArray(f1.value ++ f2.value)
   }
 
 }
 object OEDictionary{
   def apply(l:Map[String,OEType]) : OEDictionary = new OEDictionary(l)
   def apply(l:(String,OEType)*) : OEDictionary = new OEDictionary(l.toMap)
-  def unapply(a: OEDictionary) : Option[Map[String,OEType]] = Some(a.value)
+  def unapplySeq(a:OEDictionary) : Option[Seq[(String,OEType)]] = Some(a.value.toSeq)
 
-  val monoidInstance = new Monoid[OEDictionary]{
+  implicit val monoidInstance = new Monoid[OEDictionary]{
     override def zero: OEDictionary = OEDictionary()
     override def append(f1: OEDictionary, f2: => OEDictionary): OEDictionary = OEDictionary(f1.value ++ f2.value)
   }
-   implicit val semiGroupDictionary = new Semigroup[OEDictionary] {
-    override def append(f1: OEDictionary, f2: => OEDictionary): OEDictionary = OEDictionary(f1.value ++ f2.value)
-   }
 }

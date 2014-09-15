@@ -1,8 +1,8 @@
 import sbt._
 
 object Boilerplate {
-  val arities = (1 to 22)
-  val aritiesExceptOne = (2 to 22)
+  val arities = 1 to 22
+  val aritiesExceptOne = 2 to 22
   val arityChars: Map[Int, Char] = arities.map(n => (n, ('A' + n - 1).toChar)).toMap
 
   def write(path: File, fileContents: String): File = {
@@ -14,10 +14,8 @@ object Boilerplate {
     val generatedDecodeOE = write(dir / "com" / "tactix4" / "t4openerp-connector" / "GeneratedDecodeOE.scala", genDecodeOE)
 
     val generatedEncodeOE = write(dir / "com" / "tactix4" / "t4openerp-connector" / "GeneratedEncodeOE.scala", genEncodeOE)
-    //
-    //    val generatedCodecJson = write(dir / "argonaut" / "GeneratedCodecJsons.scala", genCodecJsons)
 
-    Seq(generatedDecodeOE, generatedEncodeOE) //, generatedCodecJson)
+    Seq(generatedDecodeOE, generatedEncodeOE)
   }
 
   def header = {
@@ -85,7 +83,7 @@ object Boilerplate {
      """|
        |import com.tactix4.t4openerp.connector.transport.OEDictionary
        |import com.tactix4.t4openerp.connector.transport.OEType
-       |import com.tactix4.t4openerp.connector.{CodecResult, pimpEncoder}
+       |import com.tactix4.t4openerp.connector._
        |import scala.language.postfixOps
        |
        |object GeneratedEncodeOE {
@@ -105,7 +103,7 @@ object Boilerplate {
           |     val r = c.asDictionary(d => for {
           |      f1 <- (d.get(an) | OENull).decodeAs[A]
           |     } yield f(f1))
-          |     r | s"Unable to decode: $c".failure
+          |     r | s"Unable to decode: $c".left
           |     })
           |
           | """.stripMargin
@@ -135,7 +133,7 @@ object Boilerplate {
             |%s
             |     } yield f(%s))
             |
-            |     s | s"Unable to decode $c".failure
+            |     s | s"Unable to decode $c".left
             |   })
             | """.format(
             arity,
@@ -152,7 +150,6 @@ object Boilerplate {
 
     header +
       """|
-        |import com.tactix4.t4openerp.connector.pimpDecoder
         |
         |object GeneratedDecodeOE {
         |%s

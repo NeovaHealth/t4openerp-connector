@@ -1,0 +1,41 @@
+<?xml version='1.0'?>
+<methodResponse>
+<fault>
+<value><struct>
+<member>
+<name>faultCode</name>
+<value><string>Invalid field 'fieldThatDoesntExist' in leaf "&lt;osv.ExtendedLeaf: ('fieldThatDoesntExist', 'ilike', 'peter') on res_partner (ctx: )&gt;"</string></value>
+</member>
+<member>
+<name>faultString</name>
+<value><string>Traceback (most recent call last):
+  File "/opt/openerp/server/openerp/service/wsgi_server.py", line 82, in xmlrpc_return
+    result = openerp.netsvc.dispatch_rpc(service, method, params)
+  File "/opt/openerp/server/openerp/netsvc.py", line 296, in dispatch_rpc
+    result = ExportService.getService(service_name).dispatch(method, params)
+  File "/opt/openerp/server/openerp/service/web_services.py", line 626, in dispatch
+    res = fn(db, uid, *params)
+  File "/opt/openerp/server/openerp/osv/osv.py", line 132, in wrapper
+    return f(self, dbname, *args, **kwargs)
+  File "/opt/openerp/server/openerp/osv/osv.py", line 199, in execute
+    res = self.execute_cr(cr, uid, obj, method, *args, **kw)
+  File "/opt/openerp/server/openerp/osv/osv.py", line 187, in execute_cr
+    return getattr(object, method)(cr, uid, *args, **kw)
+  File "/opt/openerp/server/openerp/osv/orm.py", line 2372, in search
+    return self._search(cr, user, args, offset=offset, limit=limit, order=order, context=context, count=count)
+  File "/opt/openerp/server/openerp/addons/base/res/res_partner.py", line 594, in _search
+    count=count, access_rights_uid=access_rights_uid)
+  File "/opt/openerp/server/openerp/osv/orm.py", line 4931, in _search
+    query = self._where_calc(cr, user, args, context=context)
+  File "/opt/openerp/server/openerp/osv/orm.py", line 4757, in _where_calc
+    e = expression.expression(cr, user, domain, self, context)
+  File "/opt/openerp/server/openerp/osv/expression.py", line 646, in __init__
+    self.parse(cr, uid, context=context)
+  File "/opt/t4/openerp-addons/t4base/fixes_expression.py", line 169, in parse
+    raise ValueError("Invalid field %r in leaf %r" % (left, str(leaf)))
+ValueError: Invalid field 'fieldThatDoesntExist' in leaf "&lt;osv.ExtendedLeaf: ('fieldThatDoesntExist', 'ilike', 'peter') on res_partner (ctx: )&gt;"
+</string></value>
+</member>
+</struct></value>
+</fault>
+</methodResponse>

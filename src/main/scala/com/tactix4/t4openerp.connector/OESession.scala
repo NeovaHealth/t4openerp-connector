@@ -17,22 +17,21 @@
 
 package com.tactix4.t4openerp.connector
 
-import com.tactix4.t4openerp.connector.transport._
 import com.tactix4.t4openerp.connector.domain.Domain
-import com.typesafe.scalalogging.slf4j.Logging
+import com.tactix4.t4openerp.connector.transport._
+import com.typesafe.scalalogging.slf4j.LazyLogging
+
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
-import scala.concurrent.Future
+import scalaz.EitherT
+import scalaz.std.option._
+import scalaz.std.option.optionSyntax._
+import scalaz.std.string._
+import scalaz.std.list._
+import scalaz.syntax.traverse._
 
-import scalaz._
-import Scalaz._
 
-
-
-case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, config: OETransportConfig, database: String, password: String, context: OEContext = OEContext(true, "en_GB", "Europe/London")) extends Logging {
-
-  import com.tactix4.t4openerp.connector.stringToOERPString
-
-  def isLoggedIn: Future[Boolean] = uid.isResult
+case class OESession(uid: OEResult[Int], transportAdaptor: OETransportAdaptor, config: OETransportConfig, database: String, password: String, context: OEContext = OEContext(true, "en_GB", "Europe/London"))(implicit ec:ExecutionContext) extends LazyLogging {
 
   /**
    * Search the supplied model with the optional domain
@@ -41,20 +40,14 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * @param offset the number of records to skip
    * @param limit a limit on the number of results
    * @param order the field name by which to order the results
-   * @return an [[OEResult[List[Id]]]] of the resultant Ids
+   * @return an [[OEResult[List[Int]]]] of the resultant Int
    */
-  def search(model: String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Id]] = {
+  def search(model: String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Int]] = {
 
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "search", domain, offset, limit, order, context))
-
-    result.ffMap(r => {
-      val idsO = for {
-        a <- r.array
-        z <- a.map(_.int).sequence[Option, Int]
-      } yield z.success[ErrorMessage]
-
-      idsO | s"Unexpected response from a search request: $r".failure[List[Id]]
-    })
+    for {
+      r <- callMethod(model, "search", domain, offset, limit, order)
+      v <- (r.array.flatMap(_.map(_.int).sequence[Option,Int]) \/> s"Unexpected response from a search request: $r").asOER
+    } yield v
 
   }
 
@@ -66,20 +59,12 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * @return a List of OEDictionaries, wrapped in an [[OEResult]]
    */
 
-  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): OEResult[List[OEDictionary]] = {
-
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "read", ids, fieldNames, context))
-
-    result.ffMap(r => {
-      val rec = for {
-        array <- r.array
-        s <- array.flatMap(_.asDictionary(OEDictionary.apply)).some
-      } yield s.success[ErrorMessage]
-
-      rec | s"Unexpected response from a read request: $result".failure[List[OEDictionary]]
-    })
-
-  }
+  def read(model: String, ids: List[Int], fieldNames: List[String] = Nil): OEResult[List[Map[String,OEType]]] =
+    for {
+      r <- callMethod(model, "read", ids, fieldNames)
+      a <- (r.array \/> s"Response was not a an array: $r").asOER
+      v <- (a.map(_.dictionary).sequence[Option, Map[String,OEType]] \/> s"Response was not an array of maps: $r").asOER
+    } yield v
 
   /**
    * Combines the search and the read operations for convenience
@@ -91,9 +76,11 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * @param order the column name by which to sort the results
    * @return a List of OEDictionaries, wrapped in an [[OEResult]]
    */
-  def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[OEDictionary]] = {
+  def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Map[String,OEType]]] = {
+
     for {
       ids <- search(model, domain, offset, limit, order)
+      if ids.nonEmpty
       result <- read(model, ids, fields)
     } yield result
 
@@ -104,13 +91,15 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * Create a new record
    * @param model the model within which to create the record
    * @param fields the fieldnames and values to write
-   * @return a OEResult containing the id of the new record
+   * @return a FutureEither containing the id of the new record
    */
-  def create(model: String, fields: Map[String, OEType]): OEResult[Id] = {
+  def create(model: String, fields: Map[String, OEType]): OEResult[Int] = {
 
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "create", OEDictionary(fields), context))
+    for {
+      r <- callMethod(model,"create",OEDictionary(fields))
+      v <- (r.int \/> s"Unexpected response from a create request: $r").asOER
+    } yield v
 
-    result.ffMap(t => t.asInt(_.success[ErrorMessage]) | s"Unexpected response from a create request: $t".failure[Id])
   }
 
   /**
@@ -123,13 +112,14 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * @param model the model to update
    * @param ids the ids of the records to update
    * @param fields the field names and associated values to update
-   * @return a OEResult[True]
+   * @return a FutureEither[True]
    */
   def write(model: String, ids: List[Int], fields: Map[String, OEType]): OEResult[Boolean] = {
 
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "write", ids, OEDictionary(fields), context))
-
-    result.ffMap(b => b.asBool(_.success[ErrorMessage]) | s"Unexpected response from a write request: $b".failure[Boolean])
+    for {
+      r <- callMethod(model,"write", ids, OEDictionary(fields))
+      v <- (r.bool \/> s"Expected a Boolean response from a write request, got: $r").asOER
+    } yield v
 
 
   }
@@ -138,14 +128,15 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * Delete records from model with given ids
    * @param model the model to delete from
    * @param ids the ids of the records to delete
-   * @return OEResult[true]
+   * @return FutureEither[true]
    */
-  def unlink(model: String, ids: List[Id]): OEResult[Boolean] = {
+  def unlink(model: String, ids: List[Int]): OEResult[Boolean] = {
 
-    val result = uid.flatMap(i => transportAdaptor.sendRequest(config, "execute", database, i, password, model, "unlink", ids, context))
+    for {
+      r <- callMethod(model,"unlink",ids)
+      v <- (r.bool \/>"Unexpected response from an unlink request: $b").asOER
+    } yield v
 
-    result.ffMap(b => b.asBool(
-      _.success[ErrorMessage]) | s"Unexpected response from an unlink request: $b".failure[Boolean])
   }
 
 
@@ -154,13 +145,14 @@ case class OESession(uid: OEResult[Id], transportAdaptor: OETransportAdaptor, co
    * @param model the model to call the method on
    * @param methodName the method to call
    * @param params the method parameters
-   * @return an OEResult[OEType]
+   * @return an FutureEither[OEType]
    */
   def callMethod(model: String, methodName: String, params: OEType*): OEResult[OEType] = {
 
-    uid.flatMap(i => {
-      transportAdaptor.sendRequest(config, "execute", List[OEType](database, i, password, model, methodName) ++ params.toList ++ List[OEType](context))
-    })
+    for {
+     i <- uid
+     r <- transportAdaptor.sendRequest(config, "execute", List[OEType](database, i, password ,model, methodName) ++ params.toList ++ List[OEType](context))
+    } yield r
 
   }
 

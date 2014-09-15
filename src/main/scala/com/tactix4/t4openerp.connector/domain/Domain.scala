@@ -17,13 +17,13 @@
 
 package com.tactix4.t4openerp.connector.domain
 
-import com.tactix4.t4openerp.connector.transport._
 import com.tactix4.t4openerp.connector._
-import scalaz._
-import Scalaz._
-import scala.language.implicitConversions
 import com.tactix4.t4openerp.connector.codecs.OEDataEncoder
+import com.tactix4.t4openerp.connector.transport._
+
 import scala.annotation.tailrec
+import scala.language.implicitConversions
+import scalaz._
 
 /**
  * A trait to specify Domains for [[com.tactix4.t4openerp.connector.OESession]] queries
@@ -251,7 +251,7 @@ object Domain {
           case (e:NOT)::rs => loopTR(rs)("!" :: acc)
         }
       }
-      OEArray(loopTR(List(obj))(Nil)).success
+      \/-(OEArray(loopTR(List(obj))(Nil)))
    }
 }
 

@@ -18,13 +18,15 @@
 package com.tactix4.t4openerp.connector
 
 import com.tactix4.t4openerp.connector.transport._
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
-import com.typesafe.scalalogging.slf4j.Logging
-
-import scalaz._
-import Scalaz._
-
-import scala.language.implicitConversions
+import scala.concurrent.{ExecutionContext, Future}
+import scala.language.{implicitConversions, postfixOps}
+import scalaz.EitherT
+import scalaz.std.option._
+import scalaz.std.option.optionSyntax._
+import scalaz.syntax.traverse._
+import scalaz.std.list._
 
 /**
  * Entry point into library and used to create an OpenERPSession
@@ -35,20 +37,20 @@ import scala.language.implicitConversions
  * @author max@tactix4.com
  *         14/07/2013
  */
-class OEConnector(protocol: String, host: String, port: Int) extends Logging {
-
+class OEConnector(protocol: String, host: String, port: Int)(implicit ec:ExecutionContext) extends LazyLogging {
 
   val config = OETransportConfig(protocol, host, port, RPCService.RPC_OBJECT.toString)
-  val transportClient:OETransportAdaptor = XmlRpcOEAdaptor
-
+  val transportClient:OETransportAdaptor = new XmlRpcOEAdaptor()
 
   def getDatabaseList:OEResult[List[String]] ={
     val conf = config.copy(path = RPCService.RPC_DATABASE.toString)
 
-    transportClient.sendRequest(conf, "list",Nil).ffMap( result =>  {
-      val dbList = result.asArray(_.map(_.string).flatten.success[ErrorMessage])
-      dbList |  s"Unexpected result when querying database list: $result".failure[List[String]]
-    })
+    for {
+      t <- transportClient.sendRequest(conf, "list",Nil)
+      a <- (t.array \/> "Response was not an array").asOER
+      s <- (a.map(_.string).sequence[Option, String] \/> "Response was not an array of strings").asOER
+    } yield s
+
   }
 
   /**
@@ -68,11 +70,9 @@ class OEConnector(protocol: String, host: String, port: Int) extends Logging {
   def startSession(username: String, password: String, database: String,context: Option[OEContext] = None) : OESession= {
     val conf = config.copy(path = RPCService.RPC_COMMON.toString)
 
-    val uid = transportClient.sendRequest(conf, "login", database, username, password).fold(
-          (error:String) => error.failure[Int])(
-          (v: OEType) =>  v.int.fold(s"Login failed: $v".failure[Int])(_.success[ErrorMessage])
-      )
-
+    val uid = transportClient.sendRequest(conf, "login", database, username, password).flatMap(
+      _.int \/> "Login failed" asOER
+    )
     OESession(uid,transportClient,config,database,password,context|OEContext())
   }
 }

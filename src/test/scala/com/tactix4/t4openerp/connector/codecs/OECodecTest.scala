@@ -1,11 +1,17 @@
-package com.tactix4.t4openerp.connector.codecs
+package com.tactix4.t4openerp.connector
 
+import org.scalatest.{ShouldMatchers, FunSuite}
+import org.scalatest.prop.PropertyChecks
+import com.tactix4.t4openerp.connector.codecs._
+import scalaz._
+import Scalaz._
 import scala.Some
-import com.tactix4.t4openerp.connector._
+import com.typesafe.config._
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
-import org.scalatest.{FunSuite, ShouldMatchers}
-import org.scalatest.prop.PropertyChecks
+import org.scalacheck.util.Buildable
 
 /**
  * Created with IntelliJ IDEA.
@@ -50,13 +56,13 @@ class OECodecTest extends FunSuite with PropertyChecks with ShouldMatchers{
   test("Test encoding the decoding"){
 
     forAll(CodecTestClassGen){ randomClass =>
-      val encodedClass = randomClass.encode
-      val decodedClass = encodedClass.flatMap(_.decodeAs[CodecTestClass])
+      val result = for {
+        encoded <- randomClass.encode
+        decoded <- encoded.decodeAs[CodecTestClass]
+      } yield decoded == randomClass
 
-      decodedClass.toOption shouldEqual Some(randomClass)
-
+      assert(result.getOrElse(false), "The encoded -> decoded class did not match original")
     }
   }
-
 
 }
