@@ -11,8 +11,6 @@ crossScalaVersions := Seq("2.10.4","2.11.2")
 
 (sourceGenerators in Compile) <+= (sourceManaged in Compile) map Boilerplate.gen
 
-resolvers += "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
-
 libraryDependencies ++= Seq(
   "com.tactix4" %% "t4xmlrpc" % "2.0.2",
   "org.scalaz" %% "scalaz-core" % "7.1.0",
