@@ -1,6 +1,6 @@
 
 # Tactix4 OpenERP Connector
-[![Build Status](https://travis-ci.org/Tactix4/t4openerp-connector.svg?branch=develop)](https://travis-ci.org/Tactix4/t4openerp-connector)
+[![Build Status](https://travis-ci.org/Tactix4/t4openerp-connector.svg?branch=master)](https://travis-ci.org/Tactix4/t4openerp-connector)
 
 ***
 
