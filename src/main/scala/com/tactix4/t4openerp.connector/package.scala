@@ -56,7 +56,7 @@ package object connector{
 
   implicit def OptionDomainToOEType(o:Option[Domain]): OEType = o.flatMap(_.encode.toOption) | OEString("")
   implicit def ContextToOEType(c:OEContext):OEType = c.encode.toOption | OEString("")
-//
+
   implicit def stringsToOERPArray(ss:List[String]) = OEArray(ss.map(OEString.apply))
   implicit def idsToOERPArray(is:List[Int]) = OEArray(is.map(i => OENumber(i)))
   implicit def stringToOERPString(s:String) = OEString(s)

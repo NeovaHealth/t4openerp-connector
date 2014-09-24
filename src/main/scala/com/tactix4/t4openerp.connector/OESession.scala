@@ -17,13 +17,13 @@
 
 package com.tactix4.t4openerp.connector
 
+import scala.language.implicitConversions
+import scala.concurrent.ExecutionContext
+
 import com.tactix4.t4openerp.connector.domain.Domain
 import com.tactix4.t4openerp.connector.transport._
 import com.typesafe.scalalogging.slf4j.LazyLogging
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.language.implicitConversions
-import scalaz.{Monad, \/-, EitherT}
 import scalaz.std.option._
 import scalaz.std.option.optionSyntax._
 import scalaz.std.string._
@@ -41,7 +41,7 @@ case class OESession(uid: OEResult[Int], transportAdaptor: OETransportAdaptor, c
    * @param offset the number of records to skip
    * @param limit a limit on the number of results
    * @param order the field name by which to order the results
-   * @return an [[OEResult[List[Int]]]] of the resultant Int
+   * @return an OEResult[List[Int]] of the resultant Int
    */
   def search(model: String, domain: Option[Domain] = None, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Int]] = {
 
@@ -80,7 +80,8 @@ case class OESession(uid: OEResult[Int], transportAdaptor: OETransportAdaptor, c
   def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Map[String,OEType]]] = {
 
     search(model,domain,offset,limit,order).flatMap(ids =>
-      if(ids.nonEmpty) read(model,ids,fields) else (Nil:List[Map[String,OEType]]).point[OEResult] )
+      if(ids.nonEmpty) read(model,ids,fields)
+      else (Nil:List[Map[String,OEType]]).point[OEResult] )
   }
 
 
@@ -88,7 +89,7 @@ case class OESession(uid: OEResult[Int], transportAdaptor: OETransportAdaptor, c
    * Create a new record
    * @param model the model within which to create the record
    * @param fields the fieldnames and values to write
-   * @return a FutureEither containing the id of the new record
+   * @return a OEResult[Int] containing the id of the new record
    */
   def create(model: String, fields: Map[String, OEType]): OEResult[Int] = {
 
@@ -109,7 +110,7 @@ case class OESession(uid: OEResult[Int], transportAdaptor: OETransportAdaptor, c
    * @param model the model to update
    * @param ids the ids of the records to update
    * @param fields the field names and associated values to update
-   * @return a FutureEither[True]
+   * @return a OEResult[True]
    */
   def write(model: String, ids: List[Int], fields: Map[String, OEType]): OEResult[Boolean] = {
 
@@ -125,7 +126,7 @@ case class OESession(uid: OEResult[Int], transportAdaptor: OETransportAdaptor, c
    * Delete records from model with given ids
    * @param model the model to delete from
    * @param ids the ids of the records to delete
-   * @return FutureEither[true]
+   * @return OEResult[true]
    */
   def unlink(model: String, ids: List[Int]): OEResult[Boolean] = {
 
@@ -142,7 +143,7 @@ case class OESession(uid: OEResult[Int], transportAdaptor: OETransportAdaptor, c
    * @param model the model to call the method on
    * @param methodName the method to call
    * @param params the method parameters
-   * @return an FutureEither[OEType]
+   * @return an OEResult[OEType]
    */
   def callMethod(model: String, methodName: String, params: OEType*): OEResult[OEType] = {
 
