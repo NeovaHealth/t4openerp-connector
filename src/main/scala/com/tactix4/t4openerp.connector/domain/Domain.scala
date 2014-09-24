@@ -23,7 +23,8 @@ import com.tactix4.t4openerp.connector.transport._
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scalaz._
+import scalaz.\/-
+
 
 /**
  * A trait to specify Domains for [[com.tactix4.t4openerp.connector.OESession]] queries

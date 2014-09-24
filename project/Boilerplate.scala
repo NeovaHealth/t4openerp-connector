@@ -22,8 +22,10 @@ object Boilerplate {
     """|
       |package com.tactix4.t4openerp.connector.codecs
       |import com.tactix4.t4openerp.connector.transport.OENull
-      |import scalaz._
-      |import Scalaz._
+      |import scalaz.std.option.optionSyntax._
+      |import scalaz.syntax.either._
+      |import scalaz.syntax.traverse._
+      |import scalaz.std.list._
       |
       | """.stripMargin
   }

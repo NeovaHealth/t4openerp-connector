@@ -23,8 +23,11 @@ import com.tactix4.t4openerp.connector.transport._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
-import scalaz.Scalaz._
-import scalaz._
+import scalaz.{-\/, EitherT, \/}
+import scalaz.std.option.optionSyntax._
+import scalaz.syntax.either._
+import scalaz.syntax.traverse._
+import scalaz.std.list._
 
 /**
  * @author max@tactix4.com

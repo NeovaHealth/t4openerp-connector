@@ -22,10 +22,6 @@ libraryDependencies ++= Seq(
   "com.github.tomakehurst" % "wiremock" % "1.48" % "test"
 )
 
-initialCommands in console := "import scalaz._, Scalaz._, com.tactix4.t4openerp.connector._,com.tactix4.t4openerp.connector.transport._,com.tactix4.t4openerp.connector.domain._"
-
-initialCommands in console in Test := "import scalaz._, Scalaz._, com.tactix4.t4openerp.connector._,com.tactix4.t4openerp.connector.transport._,com.tactix4.t4openerp.connector.domain._"
-
 osgiSettings
 
 OsgiKeys.bundleSymbolicName := "com.tactix4.t4openerp.connector"
