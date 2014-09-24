@@ -23,12 +23,13 @@ import com.typesafe.scalalogging.slf4j.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
-import scalaz.EitherT
+import scalaz.{Monad, \/-, EitherT}
 import scalaz.std.option._
 import scalaz.std.option.optionSyntax._
 import scalaz.std.string._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
+import scalaz.syntax.applicative._
 
 
 case class OESession(uid: OEResult[Int], transportAdaptor: OETransportAdaptor, config: OETransportConfig, database: String, password: String, context: OEContext = OEContext(true, "en_GB", "Europe/London"))(implicit ec:ExecutionContext) extends LazyLogging {
@@ -78,12 +79,8 @@ case class OESession(uid: OEResult[Int], transportAdaptor: OETransportAdaptor, c
    */
   def searchAndRead(model: String, domain: Option[Domain] = None, fields: List[String] = Nil, offset: Int = 0, limit: Int = 0, order: String = ""): OEResult[List[Map[String,OEType]]] = {
 
-    for {
-      ids <- search(model, domain, offset, limit, order)
-      if ids.nonEmpty
-      result <- read(model, ids, fields)
-    } yield result
-
+    search(model,domain,offset,limit,order).flatMap(ids =>
+      if(ids.nonEmpty) read(model,ids,fields) else (Nil:List[Map[String,OEType]]).point[OEResult] )
   }
 
 
