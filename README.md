@@ -1,6 +1,6 @@
 
 # Tactix4 OpenERP Connector
-[![Build Status](https://travis-ci.org/Tactix4/t4openerp-connector.svg?branch=master)](https://travis-ci.org/Tactix4/t4openerp-connector)
+[![Build Status](https://travis-ci.org/neovahealth/t4openerp-connector.svg?branch=master)](https://travis-ci.org/neovahealth/t4openerp-connector)
 
 ***
 
@@ -9,7 +9,7 @@ used subset of OpenERP's API.
 
 ## 2.0.1 Release
 
-Using newer 2.0.2 version of [t4xmlrpc](https://github.com/Tactix4/t4xmlrpc). 
+Using newer 2.0.2 version of [t4xmlrpc](https://github.com/neovahealth/t4xmlrpc). 
 Removed various custom data structures favouring the scalaz versions instead.
 The execution context is now an implicit parameter, allowing you to provide
 your own context.
